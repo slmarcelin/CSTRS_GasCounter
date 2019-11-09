@@ -1,33 +1,22 @@
-
-import ARD_funct_2 as ard
-#from tkinter.ttk import *
 import tkinter as tk
-from tkinter import *
-from threading import Timer
-from functools import partial
-from time import strftime, gmtime
-#import random
-import datetime
-import time
-import threading
-import sys
-from pathlib import Path
+from PIL import ImageTk, Image
 
-WAIT_SECONDS = 3
+#This creates the main window of an application
+window = tk.Tk()
+window.title("Join")
+window.geometry("300x300")
+window.configure(background='grey')
 
-#For better reprensentations, reset the volume every day
-def reset():
-    threading.Timer(6, reset).start()
-    print("I was here")
+path = "initial.jpg"
 
- #For better reprensentations, reset the volume every day
-def here():
-    threading.Timer(7, here).start()
-    print("I am here now")
+#Creates a Tkinter-compatible photo image, which can be used everywhere Tkinter expects an image object.
+img = ImageTk.PhotoImage(Image.open(path))
+#The Label widget is a standard Tkinter widget used to display a text or image on the screen.
+panel = tk.Label(window, image = img)
+print(panel.keys())
+panel.place(x=3000,y=12)
+#The Pack geometry manager packs widgets in rows or columns.
+panel.pack(side = "bottom", fill = "both", expand = "yes")
 
-    
-reset()   
-here()
-
-
-
+#Start the GUI
+window.mainloop()

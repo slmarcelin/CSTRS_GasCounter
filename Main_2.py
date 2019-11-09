@@ -6,14 +6,18 @@ from tkinter import *
 from threading import Timer
 from functools import partial
 from time import strftime, gmtime
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 #import random
 import datetime
 import time
 import threading
+import PIL
+from PIL import ImageTk, Image,ImageDraw,ImageFont 
 import sys
 from pathlib import Path
 import os
-
+from tkinter import ttk
 WAIT_Hour = 3600
 WAIT_Day=86400
 Fast=0.25
@@ -62,6 +66,14 @@ getInput()
 resetVolume()
 oneDay()
 
+def selection_changed(event):
+	print("Selected "+counterMenu.get())
+	### Update Graphs Frame
+	GUI_GraphicsCanvas= tk.Canvas(GUI_window, bg='white')
+	GUI_GraphicsCanvas.place(x= (w//10)+157 ,y=0  ,width= 8*(w//10) , height= 9*(h//10))
+	# Header label
+	GUI_GraphHeaderLabel=tk.Label(GUI_GraphicsCanvas, text=counterMenu.get()+' - Graph', font=("Calibri", int(15*zl), "bold"), bg="white")
+	GUI_GraphHeaderLabel.place(x=480, y=10)
 ########################################################Start the Program ##################################################################
 # global A
 # A = ard.ArdConnect(com)
@@ -69,7 +81,7 @@ oneDay()
 
 #### Arduino Serial port
 # Port in which Arduino is connected
-com_arr = [] #array of ports
+com_arr = []*30 #array of ports
 # for windows
 com_arr.append('COM3')
 com_arr.append('COM4')
@@ -106,5 +118,39 @@ GUI_window.resizable(1,1)
 #GUI_LeftPanelLeftBar.pack(side=LEFT)
 GUI_LeftPanelLeftBar = tk.Canvas(GUI_window, bg="firebrick" )
 GUI_LeftPanelLeftBar.place(x=0,y=0 ,height= h, width=(w*0.2) )
+selectedCounter=StringVar()
 
+GUI_GraphHeaderLabel=tk.Label(GUI_LeftPanelLeftBar, text='Select a Counter',bg="firebrick",fg="white", font=("Calibri", int(20*zl), "bold"), anchor='n')
+GUI_GraphHeaderLabel.place(x=5, y=40)
+
+counterMenu = ttk.Combobox(GUI_LeftPanelLeftBar, state = "readonly")
+counterMenu[ "values" ] =ard.Counters
+counterMenu.config(width=26,height=40, background="red",font=34,justify="center")
+counterMenu.place(x=0, y=100)
+counterMenu.current(0)
+counterMenu.bind( "<<ComboboxSelected>>" ,selection_changed )
+
+GUI_GraphicsCanvas= tk.Canvas(GUI_window, bg='white')
+GUI_GraphicsCanvas.place(x= (w//10)+157 ,y=0  ,width= 8*(w//10) , height= 9*(h//10))
+
+path = "image.png"
+
+img = Image.open(r'image.png')  
+#Creates a Tkinter-compatible photo image, which can be used everywhere Tkinter expects an image object.
+
+#The Label widget is a standard Tkinter widget used to display a text or image on the screen.
+
+draw = ImageDraw.Draw(img)  
+  
+# specified font size 
+font = ImageFont.truetype(r'arial.ttf',24)  
+  
+text = 'Welcome to the CSTR GUI\nPlease Select a Gas Counter to view graph rates'
+# drawing text size 
+draw.text((200, 5), text, font = font, align ="center",fill ="black") 
+img=img.save('image.png')
+img = ImageTk.PhotoImage(Image.open(path))
+#The Pack geometry manager packs widgets in rows or columns.
+panel = tk.Label(GUI_GraphicsCanvas, image = img)
+panel.pack(side = "bottom", fill = "both", expand = "yes")
 GUI_window.mainloop()

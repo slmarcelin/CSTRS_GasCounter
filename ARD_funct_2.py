@@ -11,9 +11,11 @@ reed_switch=[];
 ticks=[];
 volume=[];
 Files=[]
+Counters=[]
 
 for i in range(30):
     Files.append(" ")
+    Counters.append(" ")
 
 init=22;
 for i in range(30):
@@ -23,6 +25,7 @@ for i in range(30):
     date=str(datetime.datetime.now().date())
     number=str(i+1)
     Files[i]=date+" - GC"+number+".csv"
+    Counters[i]="Gas Counter "+number;
 
 # here=Files[0].split(" ")
 # dateo=datetime.datetime.now().date()
