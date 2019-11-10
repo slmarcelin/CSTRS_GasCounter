@@ -1,6 +1,61 @@
+###########################################################################################################################
+#   CODE ONLINE REFERENCES
+#  Title: Tutorial: Time Series Analysis with Pandas
+#  Author: Jennifer Walker
+#  Date Posted: January 10, 2019
+#  Availability: https://www.dataquest.io/blog/tutorial-time-series-analysis-with-pandas/
+
+#  Title: Using Tkinter and Matplotlib
+#  Author: Ishan Bhargava
+#  Date Posted: January 1, 2019
+#  Availability: https://ishantheperson.github.io/posts/tkinter-matplotlib/
+
+#  Title: Drop-down list (Combobox) in Tcl / Tk (tkinter)
+#  Author: Python Resources 
+#  Date Posted: June 16, 2017
+#  Availability: https://recursospython.com/guias-y-manuales/lista-desplegable-combobox-en-tkinter/
+
+#  Title: TypeError: Unrecognized value type: <class 'str'>
+#  Author: jezrael 
+#  Date Posted: May 27, 2018
+#  Availability: https://stackoverflow.com/questions/50554107/typeerror-unrecognized-value-type-class-str
+
+#  Title: tkinter button command runs function without clicking? 
+#  Author: Eric Levieil
+#  Date Posted: May 8, 2015
+#  Availability: https://stackoverflow.com/questions/30129359/tkinter-button-command-runs-function-without-clicking
+
+#  Title: How to import a csv-file into a data array?
+#  Author: martineau
+#  Date Posted: Oct 6, 2017
+#  Availability: https://stackoverflow.com/questions/46614526/how-to-import-a-csv-file-into-a-data-array
+
+#  Title: How to modify ttk Combobox fonts?
+#  Author: NirMH
+#  Date Posted: Mar 29, 17 
+#  Availability: https://stackoverflow.com/questions/43086378/how-to-modify-ttk-combobox-fonts
+
+#  Title: Python OpenCV - show an image in a Tkinter window
+#  Author: Paul Joshi
+#  Date Posted: April 20, 2018
+#  Availability:https://solarianprogrammer.com/2018/04/20/python-opencv-show-image-tkinter-window/
+
+#  Title: Python os.write() Method
+#  Author: tutorialspoint
+#  Availability:https://www.tutorialspoint.com/python/os_write.htm
+
+#  Title: Python os.write() Method
+#  Author: Paul D. Waite
+#  Date Posted: April 26, 2017
+#  Availability:https://stackoverflow.com/questions/8258432/days-between-two-dates
+
+#  Title: An elegant way to run periodic tasks in python
+#  Author:sankalp jonna
+#  Date Posted: Oct 30, 2018
+#  Availability:https://medium.com/greedygame-engineering/an-elegant-way-to-run-periodic-tasks-in-python-61b7c477b679
+############################################################################################################################
 
 import ARD_funct_2 as ard
-#from tkinter.ttk import *
 import tkinter as tk
 from tkinter import *
 from threading import Timer
@@ -8,7 +63,6 @@ from functools import partial
 from time import strftime, gmtime
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-#import random
 from tkinter import font
 import datetime
 import time
@@ -23,9 +77,10 @@ import os
 from tkinter import ttk
 import matplotlib
 matplotlib.use("TkAgg")
-
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+
 WAIT_Hour = 3600
 WAIT_Day=86400
 Fast=0.25
@@ -115,7 +170,7 @@ def HourRate(index):
 	FullData = pd.read_csv(ard.folder+"\\"+ard.Files[0][index], index_col=0)
 	FullData.index= pd.to_datetime(FullData.index,errors='coerce', format='%Y-%m-%d %H:%M:%S')
 	toPlot=FullData.loc[str(dayRange) : str(now)]
-	toPlot.resample('D').sum()
+	toPlot.resample('H').sum()
 	graphIt(1, toPlot, index, rateType)
 
 def WeekRate(index):

@@ -8,7 +8,7 @@ import csv
 run =False
 
 
-# Initialize reed switch Pins #
+# Initialize arrays #
 reed_switch=[];
 ticks=[];
 volume=[];
@@ -21,6 +21,7 @@ for i in range(30):
     Counters.append(" ")
     allFiles.append(" ")
 
+#First input pin for Gas Counter
 init=22;
 for i in range(30):
     reed_switch.append(init);
@@ -29,12 +30,6 @@ for i in range(30):
     date=str(datetime.datetime.now().date())
     number=str(i+1)
     Counters[i]="Gas Counter "+number;
-
-# here=Files[0].split(" ")
-# dateo=datetime.datetime.now().date()
-# dateob = datetime.datetime.strptime(here[0], '%Y-%m-%d').date()
-# numb=(dateo-dateob).days
-# print(numb)
 
 ## CONNECT FUNCTION ##
 def ArdConnect(com):
@@ -76,9 +71,11 @@ def ReadSwitch(ard):
         run=False
         print("Switch readings Failed!")
 
+#Folder that holds all the csv files
 folder="Counter_Logs"
 #This is a very fragile if statement! Please do not change anything without consulting me
 #This can mess up the entire program
+#this if statement creates the folder if it does not exist as well as the files
 if not os.path.exists(folder):
         os.mkdir(folder)
         for i in range(30):
@@ -88,9 +85,9 @@ if not os.path.exists(folder):
             open(filePath, 'a').close()
             fd = os.open(filePath,os.O_RDWR)
             firstRow=str.encode("Date-Time,Volume\n");
-            os.write(fd,firstRow)
+            os.write(fd,firstRow) 
             os.close(fd) 
-            if(i==29):
+            if(i==29): #Very important, all the file names are saved in a csv file
                 filePath=folder+"\\"+"setup.csv"
                 open(filePath, 'a').close()
                 fd = os.open(filePath,os.O_RDWR)
@@ -98,7 +95,7 @@ if not os.path.exists(folder):
                     firstRow=str.encode(Files[k]+",");
                     os.write(fd,firstRow)
 
-
+#Put all the file names inside a folder for application purposes
 filePath=folder+"\\"+"setup.csv"
 with open(filePath, newline='') as csvfile:
     Files= list(csv.reader(csvfile))
