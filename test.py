@@ -1,22 +1,24 @@
 import tkinter as tk
-from PIL import ImageTk, Image
+from pandas import DataFrame
+import matplotlib.pyplot as plt
+import ARD_funct_2 as ard
+import datetime
+import pandas as pd
 
-#This creates the main window of an application
-window = tk.Tk()
-window.title("Join")
-window.geometry("300x300")
-window.configure(background='grey')
 
-path = "initial.jpg"
+now=datetime.datetime.now()
+desiredRange=datetime.timedelta(hours=24)
+dayRange=now-desiredRange
 
-#Creates a Tkinter-compatible photo image, which can be used everywhere Tkinter expects an image object.
-img = ImageTk.PhotoImage(Image.open(path))
-#The Label widget is a standard Tkinter widget used to display a text or image on the screen.
-panel = tk.Label(window, image = img)
-print(panel.keys())
-panel.place(x=3000,y=12)
-#The Pack geometry manager packs widgets in rows or columns.
-panel.pack(side = "bottom", fill = "both", expand = "yes")
+desiredRange=datetime.timedelta(days=7)
+weekRange=now-desiredRange
 
-#Start the GUI
-window.mainloop()
+desiredRange=datetime.timedelta(days=31)
+MonthRange=now-desiredRange
+# ard.folder+"\\"+ard.Files[0][0]
+FullData = pd.read_csv(ard.folder+"\\"+ard.Files[0][0], index_col=0)
+FullData.index= pd.to_datetime(FullData.index,errors='coerce', format='%Y-%m-%d %H:%M:%S') 
+rangeg=FullData.loc[str(weekRange) : str(now)]
+print(len(rangeg))
+
+print(rangeg.resample('4H').sum())
