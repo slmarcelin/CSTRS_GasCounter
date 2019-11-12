@@ -162,27 +162,27 @@ def selection_changed(event): #Get the selection from the combobox
 	GUI_GraphHeaderLabel=tk.Label(GUI_GraphicsCanvas, text=counterMenu.get()+' - Graph', 
 		font=("Calibri", int(15*zl), "bold"), bg="white") 
 
-	GUI_GraphHeaderLabel.place(x=420, y=30) #place label in window
+	GUI_GraphHeaderLabel.place(x=int(w*0.20), y=int(h*0.034)) #place label in window
 	figure = Figure(figsize=(7, 7), dpi=100) #create default figure
 	plot = figure.add_subplot(1, 1, 1) #only requires one figure
 	canvas = FigureCanvasTkAgg(figure, GUI_GraphicsCanvas) #place the figure in a canvas
-	canvas.get_tk_widget().grid(column=2, row=780, rowspan=50, sticky="nesw",padx=190,pady=70) #place a grid for the canvas
+	canvas.get_tk_widget().grid(rowspan=50, sticky="nesw",padx=int(w*0.124),pady=int(h*0.08)) #place a grid for the canvas
 
 	GUI_24HourButton= tk.Button(GUI_GraphicsCanvas, text= "Hour Rate" , bg= 'white', 
 		command=lambda :HourRate(selected), font=("Calibri", int(12*zl)))  #create a 24 hour button
-	GUI_24HourButton.place(x=830, y=150 , relwidth= 0.18, relheight=0.10)  #place the button in the graph window
+	GUI_24HourButton.place(x=int(w*0.54), y=int(h*0.17) , relwidth= 0.18, relheight=0.10)  #place the button in the graph window
 
 	GUI_WeekButton= tk.Button(GUI_GraphicsCanvas, text= "Week Rate" , bg= 'white', 
 		command=lambda :WeekRate(selected),font=("Calibri", int(12*zl)))  #create a week button 
-	GUI_WeekButton.place(x=830, y=227 , relwidth= 0.18, relheight=0.10)  #place the week button in the graph window
+	GUI_WeekButton.place(x=int(w*0.54), y=int(h*0.26) , relwidth= 0.18, relheight=0.10)  #place the week button in the graph window
 
 	GUI_MonthButton= tk.Button(GUI_GraphicsCanvas, text= "Month Rate" , bg= 'white',
 		command=lambda :MonthRate(selected), font=("Calibri", int(12*zl)))  #create a month button  
-	GUI_MonthButton.place(x=830, y=304 , relwidth= 0.18, relheight=0.10)  #place the month button in the graph window
+	GUI_MonthButton.place(x=int(w*0.54), y=int(h*0.35) , relwidth= 0.18, relheight=0.10)  #place the month button in the graph window
 
 	DataButton= tk.Button(GUI_GraphicsCanvas, text= "View data" , bg= 'white',
 	command=lambda :ViewData(selected), font=("Calibri", int(12*zl)))  #create a month button  
-	DataButton.place(x=830, y=381 , relwidth= 0.18, relheight=0.10)  #place the month button in the graph window
+	DataButton.place(x=int(w*0.54), y=int(h*0.44) , relwidth= 0.18, relheight=0.10)  #place the month button in the graph window
 
 
 def homePage():#Information page
@@ -198,7 +198,7 @@ def homePage():#Information page
 
 	GUI_GraphHeaderLabel=tk.Label(GUI_GraphicsCanvas, text=text,bg="indianred",
 		fg="white", justify='center',font=("Calibri", int(14*zl), "bold"), anchor='n') #Label for the header
-	GUI_GraphHeaderLabel.place(x=50, y=120) #Label for the information page
+	GUI_GraphHeaderLabel.place(x=int(w*0.032), y=int(h*0.14)) #Label for the information page
 
 
 def HourRate(index): #Resamples the data based on hours
@@ -256,34 +256,34 @@ def graphIt(days, data, index,rateType,gtype): #This function graphs the data ba
 	formatter.offset_formats = ['','%Y','%b %Y','%d %b %Y','%d %b %Y','%d %b %Y %H:%M', ] #other format
 
 	GUI_GraphicsCanvas= tk.Canvas(GUI_window, bg='white') #canvas to hold the graph
-	GUI_GraphicsCanvas.place(x= (w//10)+157 ,y=0  ,width= 8*(w//10) , height= 9*(h//10)) #size and position of canvas
+	GUI_GraphicsCanvas.place(x= int(w*0.202),y=0  ,width= 8*(w//10) , height= 9*(h//10)) #size and position of canvas
 
 	GUI_24HourButton= tk.Button(GUI_GraphicsCanvas, text= "Hour Rate" , bg= 'white', 
 		command=lambda :HourRate(index), font=("Calibri", int(12*zl)))  #Button to access last 24 hours graph
-	GUI_24HourButton.place(x=984, y=180 , relwidth= 0.16, relheight=0.10) #Size and position of button
+	GUI_24HourButton.place(x=int(w*0.64), y=int(h*0.208) , relwidth= 0.16, relheight=0.10) #Size and position of button
 
 	GUI_WeekButton= tk.Button(GUI_GraphicsCanvas, text= "Week Rate" , bg= 'white', 
 		command=lambda :WeekRate(index),font=("Calibri", int(12*zl))) #Button to access last 7 days graph
-	GUI_WeekButton.place(x=984, y=257 , relwidth= 0.16, relheight=0.10) #Size and position of button
+	GUI_WeekButton.place(x=int(w*0.64), y=int(h*0.297) , relwidth= 0.16, relheight=0.10) #Size and position of button
 
 	GUI_MonthButton= tk.Button(GUI_GraphicsCanvas, text= "Month Rate" , bg= 'white',
 		command=lambda :MonthRate(index), font=("Calibri", int(12*zl))) #Button to access last 30 days graph
-	GUI_MonthButton.place(x=984, y=334 , relwidth= 0.16, relheight=0.10) #Size and position of button
+	GUI_MonthButton.place(x=int(w*0.64), y=int(h*0.386) , relwidth= 0.16, relheight=0.10) #Size and position of button
 
 	DataButton= tk.Button(GUI_GraphicsCanvas, text= "View data" , bg= 'white',
 	command=lambda :ViewData(index), font=("Calibri", int(12*zl)))  #Button to view overall data
-	DataButton.place(x=984, y=411 , relwidth= 0.16, relheight=0.10)  #place the month button in the graph window
+	DataButton.place(x=int(w*0.64), y=int(h*0.476) , relwidth= 0.16, relheight=0.10)  #place the month button in the graph window
 
 	if(len(data)<=days and len(data)!=0): #Check the length of data
 		header=rateType+" for Gas Counter "+str(index+1) #header of page
 		GUI_GraphHeaderLabel=tk.Label(GUI_GraphicsCanvas, text=header,  fg="firebrick",bg='white',  
 			font=("Calibri", int(18*zl), "bold"), anchor='n') #place header
-		GUI_GraphHeaderLabel.place(x=270,y=60)
+		GUI_GraphHeaderLabel.place(x=int(w*0.17),y=(h*0.069))
 
 		figure = plt.Figure(figsize=(15,15), dpi=100) #figure to hold plot
 		ax = figure.add_subplot(111) #we only need one plot
 		line = FigureCanvasTkAgg(figure, GUI_GraphicsCanvas) #we have a line graph
-		line.get_tk_widget().place(x=1,y=100, relwidth=0.80, relheight=0.85) #Place the line graph
+		line.get_tk_widget().place(x=int(w*0.0013),y=int(h*0.116), relwidth=0.80, relheight=0.85) #Place the line graph
 		ax.plot(data,marker='o', markersize=8, linestyle='-', label=rateType+' Resample', color='red') #plot the data
 		ax.set_ylabel('Volume (ml)',size=14) #set the y axis label
 		ax.xaxis.set_major_locator(locator) #set the x axis locator
@@ -303,11 +303,11 @@ def graphIt(days, data, index,rateType,gtype): #This function graphs the data ba
 		header="Not enough data to graph the "+ rateType+" for Gas Counter "+str(index+1)+"\nTry again later or pick another option"
 		GUI_GraphHeaderLabel=tk.Label(GUI_GraphicsCanvas, text=header,  fg="black",bg='white',  
 			font=("Calibri", int(14*zl), "bold"), anchor='n') #style label
-		GUI_GraphHeaderLabel.place(x=180,y=10) #place label
+		GUI_GraphHeaderLabel.place(x=int(w*0.117),y=int(h*0.011)) #place label
 		figure = Figure(figsize=(8, 6), dpi=100) #create figure
 		plot = figure.add_subplot(1, 1, 1) #plot dummy graph
 		canvas = FigureCanvasTkAgg(figure, GUI_GraphicsCanvas) #creat canvas and place figure in canvas
-		canvas.get_tk_widget().grid(column=2, row=780, rowspan=50, sticky="nesw",padx=160,pady=90) #place canvas in grid
+		canvas.get_tk_widget().grid(rowspan=50, sticky="nesw",padx=int(w*0.104),pady=int(h*0.10)) #place canvas in grid
 
 #############################################################################################################################
 #######################################Start of the Program ##################################################################
@@ -339,11 +339,11 @@ com_arr.append('/dev/ttyUSB1')
 z=1         # ZOOM
 zl=1.6  *z  # Font zoom
 
-## Main Window
+
 GUI_window = tk.Tk() #Main window
 w, h = GUI_window.winfo_screenwidth(), GUI_window.winfo_screenheight() #height of window based on the computer size
-bigfont = font.Font(family="Helvetica",size=12) #
-GUI_window.option_add("*TCombobox*Listbox*Font", bigfont)
+bigfont = font.Font(family="Helvetica",size=12) # Set font of the entire window
+GUI_window.option_add("*TCombobox*Listbox*Font", bigfont) #Add font to the combo-box
 
 ## Main window size and zoom(temporary)
 z=1         # ZOOM
@@ -361,8 +361,8 @@ GUI_LeftPanelLeftBar.place(x=0,y=0 ,height= h, width=(w*0.2) ) #Place panel
 #From line 362 to line 378 was obtain from web source (view references for digital clock with tkinter)
 time1 = ''
 clock = Label(GUI_LeftPanelLeftBar, font=('times', 16, 'bold'), bg='firebrick',fg="white")
-clock.pack(fill=BOTH, expand=1)
-clock.place(x=15,y=10)
+clock.pack(fill=BOTH, expand=1) #pack the clock
+clock.place(x=w*0.017,y=w*0.0065) #placement
 def tick():
     global time1
     # get the current local time from the PC
@@ -376,32 +376,31 @@ def tick():
     # could use >200 ms, but display gets jerky
     clock.after(200, tick)
 
-tick()
+tick() #create function
 
 
 Info_Button= tk.Button(GUI_LeftPanelLeftBar, text= "Info" , command=homePage,fg='firebrick',
  bg="white",font=("Calibri", int(11*zl),"bold")) #create info button
-Info_Button.place(x=w*0.045, y=h*0.09 , relwidth= 0.49, relheight=0.04) #Place info button in window
+Info_Button.place(x=int(w*0.045), y=int(h*0.09) , relwidth= 0.49, relheight=0.04) #Place info button in window
 
 GUI_GraphHeaderLabel=tk.Label(GUI_LeftPanelLeftBar, text='Select a Counter',bg="firebrick",
-	fg="white", font=("times", int(14*zl), "bold"), anchor='n')
-GUI_GraphHeaderLabel.place(x=35, y=140)
+	fg="white", font=("times", int(14*zl), "bold"), anchor='n') #style and create label
+GUI_GraphHeaderLabel.place(x=int(w*0.022), y=int(h*0.16)) #Place label in left bar
 
 counterMenu = ttk.Combobox(GUI_LeftPanelLeftBar, state = "readonly") #COMBO-BOX menu
 counterMenu[ "values" ] =ard.Counters #Set the values of the menu
-counterMenu.config(width=30,height=40, background="red",font=int(20*zl),justify="center") #configurate
-counterMenu.place(x=7, y=180) #place on window
+counterMenu.config(width=int(w*0.019),height=int(h*0.046), background="red",font=int(20*zl),justify="center") #configurate
+counterMenu.place(x=int(w*0.004), y=int(h*0.208))#place on window
 counterMenu.bind( "<<ComboboxSelected>>" ,selection_changed ) #on select, call function
 
 GUI_GraphicsCanvas= tk.Canvas(GUI_window, bg='white') #create canvas
-GUI_GraphicsCanvas.place(x= (w//10)+157 ,y=0  ,width= 8*(w//10) , height= 11*(h//10)) #style canvas
+GUI_GraphicsCanvas.place(x= int(w*0.202) ,y=0  ,width= 8*(w//10) , height= 11*(h//10)) #style canvas
 
 path = "image.png" #dummy image for intro
 img = ImageTk.PhotoImage(Image.open(path)) #fetch image
 panel = tk.Label(GUI_GraphicsCanvas, image = img) #place a label
 panel.pack(side = "bottom", fill = "both", expand = "yes") #pack overall
 
-print("height:"+str(h)+" Width: "+str(w))
 
 #The program will not work without this loops
 GUI_window.mainloop() #keep the program in a continuous loop
