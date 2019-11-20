@@ -98,6 +98,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg  #Place figures 
 from pandas.plotting import register_matplotlib_converters  #Register matpotlib to pandas
 import matplotlib.dates as mdates  #For date formatting purposes
 from pandasgui import show
+import numpy as np
 register_matplotlib_converters()  #register matpotlib converters
 from PyQt5.QtWidgets import QApplication, QWidget
 WAIT_Hour = 3600  #60 mins of seconds
@@ -151,10 +152,16 @@ getInput() #start the input retriever timer
 resetVolume() #start the volume reset timer
 oneDay() #check if 30 days has passes, reset the volume, check size of file
 
+def deleteChildren():
+	for child in GUI_window.winfo_children():
+		if (child !=GUI_LeftPanelLeftBar):
+			child.destroy()
+
 def selection_changed(event): #Get the selection from the combobox
 	selected=counterMenu.current() #Get the index of the selected Gas counter
-
 	### Create default Graph Frame
+	deleteChildren()
+
 	GUI_GraphicsCanvas= tk.Canvas(GUI_window, bg='white')  #graph window
 	GUI_GraphicsCanvas.place(x= (w//10)+157 ,y=0  ,width= 8*(w//10) , height= 11*(h//10)) #window size
 
@@ -186,6 +193,8 @@ def selection_changed(event): #Get the selection from the combobox
 
 
 def homePage():#Information page
+	deleteChildren()
+
 	GUI_GraphicsCanvas= tk.Canvas(GUI_window, bg='indianred')
 	GUI_GraphicsCanvas.place(x= (w//10)+157 ,y=0  ,width= 8*(w//10) , height= 11*(h//10))
     
@@ -244,10 +253,12 @@ def ViewData(index): #This allows the user to view the full list of data from th
 	if(len(FullData)!=0):
 		show(FullData) #This will show the data and allow to view statistics and a histogram
 	else: #in case the dataset is empty popul error message
-		messagebox.showinfo("Empty CSV file", "There is no Data availabe at the moment for Counter "+str(index+1)) #error message
+		messagebox.showinfo("Empty CSV file", "There is no data availabe at the moment for Counter #"+str(index+1)) #error message
 
 def graphIt(days, data, index,rateType,gtype): #This function graphs the data based on selected counter
 	#This arrays formats the x axis, according to time or dates
+	deleteChildren()
+
 	locator = mdates.AutoDateLocator() #from the matpotlib library package
 	formatter = mdates.ConciseDateFormatter(locator) #specific type of style
 	formatter.formats = ['%y','%b','%d','%H:%M','%H:%M','%S.%f',] #Format the dates 
@@ -280,14 +291,15 @@ def graphIt(days, data, index,rateType,gtype): #This function graphs the data ba
 			font=("Calibri", int(18*zl), "bold"), anchor='n') #place header
 		GUI_GraphHeaderLabel.place(x=int(w*0.17),y=(h*0.069))
 
-		figure = plt.Figure(figsize=(15,15), dpi=100) #figure to hold plot
+		figure = plt.Figure(figsize=(14,16), dpi=100) #figure to hold plot
 		ax = figure.add_subplot(111) #we only need one plot
 		line = FigureCanvasTkAgg(figure, GUI_GraphicsCanvas) #we have a line graph
-		line.get_tk_widget().place(x=int(w*0.0013),y=int(h*0.116), relwidth=0.80, relheight=0.85) #Place the line graph
+		line.get_tk_widget().place(x=int(w*0.0014),y=int(h*0.116), relwidth=0.80, relheight=0.85) #Place the line graph
 		ax.plot(data,marker='o', markersize=8, linestyle='-', label=rateType+' Resample', color='red') #plot the data
 		ax.set_ylabel('Volume (ml)',size=14) #set the y axis label
 		ax.xaxis.set_major_locator(locator) #set the x axis locator
 		ax.xaxis.set_major_formatter(formatter) #set format
+		ax.grid(True) #Place grid on the graph plot
 
 		for i,j in data.Volume.items(): #anotate the points on the graph
 		    ax.annotate(str(j), xy=(i, j),size=14) #place in x,y axis
@@ -309,8 +321,8 @@ def graphIt(days, data, index,rateType,gtype): #This function graphs the data ba
 		canvas = FigureCanvasTkAgg(figure, GUI_GraphicsCanvas) #creat canvas and place figure in canvas
 		canvas.get_tk_widget().grid(rowspan=50, sticky="nesw",padx=int(w*0.104),pady=int(h*0.10)) #place canvas in grid
 
-#############################################################################################################################
-#######################################Start of the Program ##################################################################
+##############################################################################################################################
+##############################################Start of the Program ###########################################################
 # global A
 # A = ard.ArdConnect(com)
 # ard.ArdSetup(A)
@@ -389,7 +401,7 @@ GUI_GraphHeaderLabel.place(x=int(w*0.022), y=int(h*0.16)) #Place label in left b
 
 counterMenu = ttk.Combobox(GUI_LeftPanelLeftBar, state = "readonly") #COMBO-BOX menu
 counterMenu[ "values" ] =ard.Counters #Set the values of the menu
-counterMenu.config(width=int(w*0.019),height=int(h*0.046), background="red",font=int(20*zl),justify="center") #configurate
+counterMenu.config(width=int(w*0.016),height=int(h*0.046), background="red",font=int(20*zl),justify="center") #configurate
 counterMenu.place(x=int(w*0.004), y=int(h*0.208))#place on window
 counterMenu.bind( "<<ComboboxSelected>>" ,selection_changed ) #on select, call function
 
@@ -400,7 +412,6 @@ path = "image.png" #dummy image for intro
 img = ImageTk.PhotoImage(Image.open(path)) #fetch image
 panel = tk.Label(GUI_GraphicsCanvas, image = img) #place a label
 panel.pack(side = "bottom", fill = "both", expand = "yes") #pack overall
-
 
 #The program will not work without this loops
 GUI_window.mainloop() #keep the program in a continuous loop
