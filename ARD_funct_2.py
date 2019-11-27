@@ -35,16 +35,16 @@ for i in range(30):
 ## CONNECT FUNCTION ##
 def ArdConnect(com):
     global run
-    run = True
     try:
         #print('Connecting...')
         connection = SerialManager(device=com)
         ard = ArduinoApi(connection=connection)
-        print("Device connected")
+        print("[Arduino connected]")
+        run = True
         return ard
     except:
         run=False
-        print("Connection Failed!")
+        print('[Connection Failed]')
         return 'EMPTY'
 
 # ## SETUP Arduino with the reed switch pins ##
@@ -57,16 +57,16 @@ def ArdSetup(ard):
             print('pin #'+reed_switch[i]+' is set')
      except:
          run=False
-         print("Setup Failed!")
+         print('[Arduino setup...Failed]')
 
 
 ## Get switch readings from the gas counters
 def ReadSwitch(ard):
     global run
-    run = True
     try:
         for i in range(30):
             ticks[i]=ard.digitalRead(reed_switch[i])
+            run = True
             return ticks
     except:
         run=False

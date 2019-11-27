@@ -226,7 +226,7 @@ def HourRate(index): #Resamples the data based on hours
 def WeekRate(index): #Resamples the data based on the last 7 days
 	rateType="Week Rate" #Title of the graph
 	now=datetime.datetime.now() #get today's date
-	desiredRange=datetime.timedelta(days=8) #obtain date for last 7 days including today
+	desiredRange=datetime.timedelta(days=7) #obtain date for last 7 days including today
 	WeekRange=now-desiredRange #Get the date
 
 	FullData = pd.read_csv(ard.folder+"\\"+ard.Files[0][index], index_col=0) #Fetch the csv file for the selected counter
@@ -245,7 +245,7 @@ def MonthRate(index): #Resamples the data based on the last 30 days
 	FullData.index= pd.to_datetime(FullData.index,errors='coerce', format='%Y-%m-%d %H:%M:%S') #set the first column to datetime
 	toPlot=FullData.loc[str(MonthRange) : str(now)] #Select the data based on that
 	new_Month=toPlot.resample('D').sum() #Resample the data based on days and sum the data for the last 30 days
-	graphIt(31, new_Month, index,rateType,2) #Send everything to the graphIt function
+	graphIt(32, new_Month, index,rateType,2) #Send everything to the graphIt function
 
 def ViewData(index): #This allows the user to view the full list of data from the csv
 	FullData = pd.read_csv(ard.folder+"\\"+ard.Files[0][index], index_col=0) #Fetch the csv file for the selected counter
@@ -305,11 +305,14 @@ def graphIt(days, data, index,rateType,gtype): #This function graphs the data ba
 		    ax.annotate(str(j), xy=(i, j),size=14) #place in x,y axis
 
 		if(gtype==0): #gas type graph for 24 hours
-			 ax.set_xlabel('Last 24 Hours',size=14) #set the x axis label
+			ax.set_xlabel('Last 24 Hours',size=14) #set the x axis label
+			GUI_24HourButton.configure(bg='firebrick',fg='white',relief=SUNKEN)
 		if(gtype==1): #gas type graph for last 7 days
 			 ax.set_xlabel('Last 7 days',size=14) #set the y axis label
+			 GUI_WeekButton.configure(bg='firebrick',fg='white',relief=GROOVE)
 		if(gtype==2): #gas type graph for last 30 days
 			 ax.set_xlabel('Last 30 days',size=14) #set the x axis label
+			 GUI_MonthButton.configure(bg='firebrick',fg='white', relief=GROOVE)
 
 	else: #If the length of the data is equal to 0
 		header="Not enough data to graph the "+ rateType+" for Gas Counter "+str(index+1)+"\nTry again later or pick another option"
@@ -320,6 +323,11 @@ def graphIt(days, data, index,rateType,gtype): #This function graphs the data ba
 		plot = figure.add_subplot(1, 1, 1) #plot dummy graph
 		canvas = FigureCanvasTkAgg(figure, GUI_GraphicsCanvas) #creat canvas and place figure in canvas
 		canvas.get_tk_widget().grid(rowspan=50, sticky="nesw",padx=int(w*0.104),pady=int(h*0.10)) #place canvas in grid
+
+def _SerialPortChange():
+	global com
+	com = GUI_SerialPortValue.get()
+	return True
 
 ##############################################################################################################################
 ##############################################Start of the Program ###########################################################
@@ -390,7 +398,7 @@ def tick():
 
 tick() #create function
 
-
+RGB_Graph_b1 = 	'#{:02X}{:02X}{:02X}'.format(181,197,196)
 Info_Button= tk.Button(GUI_LeftPanelLeftBar, text= "Info" , command=homePage,fg='firebrick',
  bg="white",font=("Calibri", int(11*zl),"bold")) #create info button
 Info_Button.place(x=int(w*0.045), y=int(h*0.09) , relwidth= 0.49, relheight=0.04) #Place info button in window
@@ -408,6 +416,16 @@ counterMenu.bind( "<<ComboboxSelected>>" ,selection_changed ) #on select, call f
 GUI_GraphicsCanvas= tk.Canvas(GUI_window, bg='white') #create canvas
 GUI_GraphicsCanvas.place(x= int(w*0.202) ,y=0  ,width= 8*(w//10) , height= 11*(h//10)) #style canvas
 
+############# Status Bar #########################################################
+GUI_SerialPortLabel = tk.Label(GUI_LeftPanelLeftBar,text='PORT',bg="firebrick",fg="white", font=("times", int(11*zl), "bold"), anchor='n')
+GUI_SerialPortLabel.place(x=int(w*0.004),y=int(h*0.92), width=int(w*0.05),height=int(h*0.046))
+#
+GUI_SerialPortValue = tk.Spinbox(GUI_LeftPanelLeftBar, values=com_arr, bg= 'white', font= 10, command= _SerialPortChange)
+GUI_SerialPortValue.place(x=int(w*0.055),y=int(h*0.92), relwidth= 1-0.75, height=int(h*0.040))
+# #ARDUINO STATUS
+GUI_StatusInfo=tk.Label(GUI_LeftPanelLeftBar,bg= 'firebrick',anchor='e',text='CXN',fg="white",font=("times", int(11*zl), "bold"))
+GUI_StatusInfo.place(x=int(w*0.12),y=int(h*0.92), width=int(w*0.05),height=int(h*0.046))
+##################################################################################
 path = "image.png" #dummy image for intro
 img = ImageTk.PhotoImage(Image.open(path)) #fetch image
 panel = tk.Label(GUI_GraphicsCanvas, image = img) #place a label
@@ -415,3 +433,5 @@ panel.pack(side = "bottom", fill = "both", expand = "yes") #pack overall
 
 #The program will not work without this loops
 GUI_window.mainloop() #keep the program in a continuous loop
+sys.exit()
+
