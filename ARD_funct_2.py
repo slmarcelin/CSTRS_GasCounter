@@ -36,7 +36,7 @@ for i in range(30):
 def ArdConnect(com):
     global run
     try:
-        #print('Connecting...')
+        print('Connecting...')
         connection = SerialManager(device=com)
         ard = ArduinoApi(connection=connection)
         print("[Arduino connected]")
@@ -78,28 +78,27 @@ folder="Counter_Logs"
 #This can mess up the entire program
 #this if statement creates the folder if it does not exist as well as the files
 if not os.path.exists(folder):
-        os.mkdir(folder)
-        for i in range(30):
-            Files[i]=date+" - GC"+str(i+1)+".csv"
-            allFiles[i]=Files[i]
-            filePath=folder+"\\"+Files[i]
+    os.mkdir(folder)
+    for i in range(30):
+        Files[i]=date+" - GC"+str(i+1)+".csv"
+        allFiles[i]=Files[i]
+        filePath=folder+"\\"+Files[i]
+        open(filePath, 'a').close()
+        fd = os.open(filePath,os.O_RDWR)
+        firstRow=str.encode("Date-Time,Volume\n");
+        os.write(fd,firstRow) 
+        os.close(fd) 
+        if(i==29): #Very important, all the file names are saved in a csv file
+            filePath=folder+"\\"+"setup.csv"
             open(filePath, 'a').close()
             fd = os.open(filePath,os.O_RDWR)
-            firstRow=str.encode("Date-Time,Volume\n");
-            os.write(fd,firstRow) 
-            os.close(fd) 
-            if(i==29): #Very important, all the file names are saved in a csv file
-                filePath=folder+"\\"+"setup.csv"
-                open(filePath, 'a').close()
-                fd = os.open(filePath,os.O_RDWR)
-                for k in range(30):
-                    firstRow=str.encode(Files[k]+",");
-                    os.write(fd,firstRow)
+            for k in range(30):
+                firstRow=str.encode(Files[k]+",");
+                os.write(fd,firstRow)
 
-#Put all the file names inside a folder for application purposes
-filePath=folder+"\\"+"setup.csv"
-with open(filePath, newline='') as csvfile:
-    Files= list(csv.reader(csvfile))
-
-
+if os.path.exists(folder):    
+    #Put all the file names inside a folder for application purposes
+    filePath=folder+"\\"+"setup.csv"
+    with open(filePath, newline='') as csvfile:
+        Files= list(csv.reader(csvfile))
 

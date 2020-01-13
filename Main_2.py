@@ -109,7 +109,7 @@ Fast=0.25    #1/4 of seconds
 ##########################################FUNCTIONS##############################################################################
 
 def getInput():  #Get input from the Gas counter every 0.25 seconds
-	threading.Timer(Fast, resetVolume).start()  #Set the timer
+	threading.Timer(Fast, getInput).start()  #Set the timer
 	if ard.run :  #If the arduino is running
 		ard.ReadSwitch()  #Read the inputs
 		for i in range(30):  #we have 30 inputs fron 30 gas Counters
@@ -118,7 +118,7 @@ def getInput():  #Get input from the Gas counter every 0.25 seconds
 				filePath=ard.folder+"\\"+ard.Files[0][i] #If there is a tick, save to the right csv file
 				fd = os.open(filePath,os.O_RDWR)  #open the csv file that corresponds to the counter
 				col1=str(datetime.datetime.now())+"," #The current date
-				row=col1+sr(volume[i])  #The date and the volume of that Gas counter
+				row=col1+str(volume[i])+"\n"  #The date and the volume of that Gas counter
 				os.write(fd,str.encode(row)) #Write to the file
 				os.close(fd)  #close the file
 
@@ -139,12 +139,16 @@ def oneDay(): #This function is called each time a day passes, volume is reset, 
     	filep=ard.Files[0][i].split(" ")  #split the title pf the string to get the date part
     	passFile = datetime.datetime.strptime(filep[0], '%Y-%m-%d').date() #convert the string date to datetime object
     	days=(today-passFile).days #calculate teh difference between file creation date and current date
-    	size=os.path.getsize(ard.folder+"\\"+ard.Files[0][i]) #Get the size of the file
-    	if(days==30 or size==1000000): #if 30 days has passed or the file size is 10 MB, delete the file and create a new one
-    		os.remove(ard.folder+"\\"+ard.Files[0][i]); #remove the file
-    		ard.Files[0][i]=str(today)+" - GC"+i+".csv" #create a new title
-    		filePath=ard.folder+"\\"+ard.Filesp[0][i] #get the file path
+    	size=os.path.getsize(filePath) #Get the size of the file
+    	if(days>=30 or size==1000000): #if 30 days has passed or the file size is 10 MB, delete the file and create a new one
+    		os.remove(filePath); #remove the file
+    		ard.Files[0][i]=str(today)+" - GC"+str(i+1)+".csv" #create a new title
+    		filePath=ard.folder+"\\"+ard.Files[0][i] #get the file path
     		open(filePath, 'a').close() #create the new file in the folder and close it
+            fd = os.open(filePath,os.O_RDWR)
+            firstRow=str.encode("Date-Time,Volume\n");
+            os.write(fd,firstRow) 
+            os.close(fd) 
 
 
 
@@ -422,7 +426,7 @@ GUI_SerialPortLabel.place(x=int(w*0.004),y=int(h*0.92), width=int(w*0.05),height
 #
 GUI_SerialPortValue = tk.Spinbox(GUI_LeftPanelLeftBar, values=com_arr, bg= 'white', font= 10, command= _SerialPortChange)
 GUI_SerialPortValue.place(x=int(w*0.055),y=int(h*0.92), relwidth= 1-0.75, height=int(h*0.040))
-# #ARDUINO STATUS
+# #ARDUINO STATUSd
 GUI_StatusInfo=tk.Label(GUI_LeftPanelLeftBar,bg= 'firebrick',anchor='e',text='CXN',fg="white",font=("times", int(11*zl), "bold"))
 GUI_StatusInfo.place(x=int(w*0.12),y=int(h*0.92), width=int(w*0.05),height=int(h*0.046))
 ##################################################################################

@@ -1,21 +1,41 @@
-import pandas as pd
-from pandasgui import show
-import datetime
-import ARD_funct_2 as ard
-import platform  
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib import style
+import threading #for scheduling
+style.use('fivethirtyeight')
+import os,sys
+File='example.txt'
+fd = os.open(File,os.O_RDWR)
 
-now=datetime.datetime.now()
-desiredRange=datetime.timedelta(hours=24)
-dayRange=now-desiredRange
+fig = plt.figure()
+ax1 = fig.add_subplot(1,1,1)
 
-desiredRange=datetime.timedelta(days=20)
-weekRange=now-desiredRange
+def animate(i):
+    graph_data = open('example.txt','r').read()
+    lines = graph_data.split('\n')
+    xs = []
+    ys = []
+    for line in lines:
+        if len(line) > 1:
+            x, y = line.split(',')
+            xs.append(float(x))
+            ys.append(float(y))
+    ax1.clear()
+    ax1.plot(xs, ys)
+y=8
+def getInput():  #Get input from the Gas counter every 0.25 seconds
+    threading.Timer(0.80, getInput).start()  #Set the timer
+    y
+    y=y-4
+    print(y)
+    y=y+4
+    # row=str(10)+","+str(y)+"\n"  #The date and the volume of that Gas counter
+    # os.write(fd,str.encode(row)) #Write to the file
 
-desiredRange=datetime.timedelta(days=31)
-MonthRange=now-desiredRange
 
-FullData = pd.read_csv(ard.folder+"\\"+ard.Files[0][0], index_col=0)
-FullData.index= pd.to_datetime(FullData.index,errors='coerce', format='%Y-%m-%d %H:%M:%S') 
-toPlot=FullData.loc[str(dayRange) : str(now)] #Select the data based on that
-newHour=toPlot.resample('H').sum()  #Resample the data based on hours and sum the data for each hour
-print(newHour)
+
+
+getInput()
+
+ani = animation.FuncAnimation(fig, animate, interval=1000)
+plt.show()
