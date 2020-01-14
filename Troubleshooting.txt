@@ -1,0 +1,16 @@
+What to do for Gas Counter troubleshooting:
+
+Run from the ARD_funct_2.py file first
+a-Test Connection with Arduino
+b-Test Connection with digital input
+c-Test reading from digital input
+
+switch to Main_2.py file
+
+Test Connection with Arduino
+a-Check if tick has been written to file
+b-Once it has been written to file, graph will be displayed. 
+c-Long run test would be to let the program run for at least three hours
+and record behavior of GUI and outputs.
+
+Project part 1 done!!!!

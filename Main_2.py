@@ -103,8 +103,8 @@ register_matplotlib_converters()  #register matpotlib converters
 from PyQt5.QtWidgets import QApplication, QWidget
 WAIT_Hour = 3600  #60 mins of seconds
 WAIT_Day=86400  #24 hours of seconds
-Fast=0.25    #1/4 of seconds
-
+Fast=0.15    #1/7 of seconds
+Mb=1000000   #size of 1 MB is 1000000 bytes
 
 ##########################################FUNCTIONS##############################################################################
 
@@ -140,15 +140,15 @@ def oneDay(): #This function is called each time a day passes, volume is reset, 
     	passFile = datetime.datetime.strptime(filep[0], '%Y-%m-%d').date() #convert the string date to datetime object
     	days=(today-passFile).days #calculate teh difference between file creation date and current date
     	size=os.path.getsize(filePath) #Get the size of the file
-    	if(days>=30 or size==1000000): #if 30 days has passed or the file size is 10 MB, delete the file and create a new one
+    	if(days>=30 or size>=(10*Mb)): #if 30 days has passed or the file size is 10 MB, delete the file and create a new one
     		os.remove(filePath); #remove the file
-    		ard.Files[0][i]=str(today)+" - GC"+str(i+1)+".csv" #create a new title
-    		filePath=ard.folder+"\\"+ard.Files[0][i] #get the file path
+    		ard.Files[0][i]=str(today)+" - GC"+str(i+1)+".csv" #update the title to today's date
+    		filePath=ard.folder+"\\"+ard.Files[0][i] #get the new file path
     		open(filePath, 'a').close() #create the new file in the folder and close it
-            fd = os.open(filePath,os.O_RDWR)
-            firstRow=str.encode("Date-Time,Volume\n");
-            os.write(fd,firstRow) 
-            os.close(fd) 
+    		fd = os.open(filePath,os.O_RDWR)#open the new file
+    		firstRow=str.encode("Date-Time,Volume\n") #write the first line 
+    		os.write(fd,firstRow) #write the line on the file
+    		os.close(fd) #close the file
 
 
 

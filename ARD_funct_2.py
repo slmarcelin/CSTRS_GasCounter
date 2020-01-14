@@ -95,6 +95,7 @@ if not os.path.exists(folder):
             for k in range(30):
                 firstRow=str.encode(Files[k]+",");
                 os.write(fd,firstRow)
+            os.close(fd)
 
 if os.path.exists(folder):    
     #Put all the file names inside a folder for application purposes
