@@ -11,7 +11,7 @@ run =False
 
 # Initialize arrays #
 reed_switch=[];
-ticks=[];
+ticks=[0]*30;
 volume=[];
 Files=[]
 allFiles=[]
@@ -36,15 +36,16 @@ for i in range(30):
 def ArdConnect(com):
     global run
     try:
+        print('\nAttempting to connect')
         print('Connecting...')
         connection = SerialManager(device=com)
         ard = ArduinoApi(connection=connection)
-        print("[Arduino connected]")
+        print("Arduino connected")
         run = True
         return ard
     except:
         run=False
-        print('[Connection Failed]')
+        print('Error :Connection Failed!!')
         return 'EMPTY'
 
 # ## SETUP Arduino with the reed switch pins ##
@@ -52,22 +53,22 @@ def ArdSetup(ard):
      global run
      run = True
      try:
-         for i in range(30):        
+        # UNCOMMENT FOR ARDUINO MEGA
+        for i in range(30):  
             ard.pinMode(reed_switch[i], ard.INPUT)
             print('pin #'+reed_switch[i]+' is set')
      except:
          run=False
          print('[Arduino setup...Failed]')
 
-
 ## Get switch readings from the gas counters
 def ReadSwitch(ard):
     global run
     try:
+        # UNCOMMENT FOR ARDUINO MEGA
         for i in range(30):
             ticks[i]=ard.digitalRead(reed_switch[i])
             run = True
-            return ticks
     except:
         run=False
         print("Switch readings Failed!")
@@ -81,13 +82,15 @@ if not os.path.exists(folder):
     os.mkdir(folder)
     for i in range(30):
         Files[i]=date+" - GC"+str(i+1)+".csv"
+       
         allFiles[i]=Files[i]
         filePath=folder+"\\"+Files[i]
-        open(filePath, 'a').close()
-        fd = os.open(filePath,os.O_RDWR)
-        firstRow=str.encode("Date-Time,Volume\n");
-        os.write(fd,firstRow) 
-        os.close(fd) 
+        fd = open(filePath,'a')
+        firstRow = "Date-Time,Volume\n"
+        fd.write(str(firstRow))
+        fd.flush()
+        fd.close() 
+
         if(i==29): #Very important, all the file names are saved in a csv file
             filePath=folder+"\\"+"setup.csv"
             open(filePath, 'a').close()

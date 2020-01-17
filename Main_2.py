@@ -97,41 +97,85 @@ from matplotlib.figure import Figure #Manipulate figures
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg  #Place figures in canvas
 from pandas.plotting import register_matplotlib_converters  #Register matpotlib to pandas
 import matplotlib.dates as mdates  #For date formatting purposes
+from matplotlib.dates import AutoDateFormatter, AutoDateLocator
 from pandasgui import show
 import numpy as np
 register_matplotlib_converters()  #register matpotlib converters
 from PyQt5.QtWidgets import QApplication, QWidget
+
 WAIT_Hour = 3600  #60 mins of seconds
 WAIT_Day=86400  #24 hours of seconds
-Fast=0.15    #1/7 of seconds
+Fast=2    #1/7 of seconds
 Mb=1000000   #size of 1 MB is 1000000 bytes
+global connectS
+connectS = "N-CXN"
 
 ##########################################FUNCTIONS##############################################################################
+#### Arduino Serial port
+# Port in which Arduino is connected
+com_arr = []*30 #array of ports
+
+# for windows
+com = 'COM13'
+com_arr.append('COM13')
+com_arr.append('COM3')
+com_arr.append('COM4')
+com_arr.append('COM7')
+com_arr.append('COM11')
+com_arr.append('COM12')
+com_arr.append('COM14')
+com_arr.append('COM15')
+# for Raspberry PI
+com_arr.append('/dev/ttyACM1')
+com_arr.append('/dev/ttyACM2')
+com_arr.append('/dev/ttyACM3')
+com_arr.append('/dev/ttyUSB0')
+com_arr.append('/dev/ttyUSB1')
+
+
+
 
 def getInput():  #Get input from the Gas counter every 0.25 seconds
-	threading.Timer(Fast, getInput).start()  #Set the timer
+	global A, threading1
+	threading1 = Timer(Fast, getInput)  #Set the timer
+	threading1.start()  #Set the timer
+
 	if ard.run :  #If the arduino is running
-		ard.ReadSwitch()  #Read the inputs
+		connectS="CXN"
+		ard.ReadSwitch(A)  #Read the inputs
+		print("Reed Switch output list:")
+		print(ard.ticks)
 		for i in range(30):  #we have 30 inputs fron 30 gas Counters
 			if(ard.ticks[i]==1): #ticks array holds reed switch values for each counter
-				volume[i]=volume[i]+30 #Increase the volume for this particular counter
+				ard.volume[i]=ard.volume[i]+30 #Increase the volume for this particular counter
 				filePath=ard.folder+"\\"+ard.Files[0][i] #If there is a tick, save to the right csv file
-				fd = os.open(filePath,os.O_RDWR)  #open the csv file that corresponds to the counter
-				col1=str(datetime.datetime.now())+"," #The current date
-				row=col1+str(volume[i])+"\n"  #The date and the volume of that Gas counter
-				os.write(fd,str.encode(row)) #Write to the file
-				os.close(fd)  #close the file
+				fd = open(filePath,'a')  #open the csv file that corresponds to the counter
+				col1=str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))+"," #The current data
+				row=col1+str(ard.volume[i])+"\n"  #The date and the volume of that Gas counter
+				fd.write(row) #Write to the file
+				fd.flush()
+				fd.close()  #close the file
+	else:
+		print("Port selected:" +com)
+		A = ard.ArdConnect(com)
+		if ard.run:
+			ard.ArdSetup(A)
+			connectS="CXN"
 
 
 
 def resetVolume(): #This function is called each time an hour passes, volume is reset for more presice data
-    threading.Timer(WAIT_Hour, resetVolume).start() #Set timer for 60 mns
+    global threading2
+    threading2 = Timer(WAIT_Hour, resetVolume)
+    threading2.start() #Set timer for 60 mns
     for i in range(30):  #Reset the overall volume sums to 0 for the next hour
     	ard.volume[i]=0 #for each counter
 
 
 def oneDay(): #This function is called each time a day passes, volume is reset, files are verified
-    threading.Timer(WAIT_Day, oneDay).start() #Set timer for 24 hrs
+    global threading3
+    threading3=Timer(WAIT_Day, oneDay)#Set timer for 24 hrs
+    threading3.start() #Set timer for 24 hrs
     today=datetime.datetime.now().date() #Get the current date
     for i in range(30):  #For 30 reactors
     	ard.volume[i]=0  #reset the volume for each counter
@@ -144,12 +188,20 @@ def oneDay(): #This function is called each time a day passes, volume is reset, 
     		os.remove(filePath); #remove the file
     		ard.Files[0][i]=str(today)+" - GC"+str(i+1)+".csv" #update the title to today's date
     		filePath=ard.folder+"\\"+ard.Files[0][i] #get the new file path
-    		open(filePath, 'a').close() #create the new file in the folder and close it
-    		fd = os.open(filePath,os.O_RDWR)#open the new file
-    		firstRow=str.encode("Date-Time,Volume\n") #write the first line 
-    		os.write(fd,firstRow) #write the line on the file
-    		os.close(fd) #close the file
+    		fd = open(filePath,'a')
+    		firstRow = "Date-Time,Volume\n"
+    		fd.write(firstRow)
+    		fd.flush()
+    		fd.close() 
 
+
+##############################################################################
+######## INITIAL CODE ########################################################
+global A
+print("Port selected:" +com)
+A = ard.ArdConnect(com)
+ard.ArdSetup(A)
+print(A)
 
 
 getInput() #start the input retriever timer
@@ -263,13 +315,6 @@ def graphIt(days, data, index,rateType,gtype): #This function graphs the data ba
 	#This arrays formats the x axis, according to time or dates
 	deleteChildren()
 
-	locator = mdates.AutoDateLocator() #from the matpotlib library package
-	formatter = mdates.ConciseDateFormatter(locator) #specific type of style
-	formatter.formats = ['%y','%b','%d','%H:%M','%H:%M','%S.%f',] #Format the dates 
-	formatter.zero_formats = [''] + formatter.formats[:-1] #add format
-	formatter.zero_formats[3] = '%d-%b' #format
-	formatter.offset_formats = ['','%Y','%b %Y','%d %b %Y','%d %b %Y','%d %b %Y %H:%M', ] #other format
-
 	GUI_GraphicsCanvas= tk.Canvas(GUI_window, bg='white') #canvas to hold the graph
 	GUI_GraphicsCanvas.place(x= int(w*0.202),y=0  ,width= 8*(w//10) , height= 9*(h//10)) #size and position of canvas
 
@@ -289,6 +334,27 @@ def graphIt(days, data, index,rateType,gtype): #This function graphs the data ba
 	command=lambda :ViewData(index), font=("Calibri", int(12*zl)))  #Button to view overall data
 	DataButton.place(x=int(w*0.64), y=int(h*0.476) , relwidth= 0.16, relheight=0.10)  #place the month button in the graph window
 
+	today=datetime.datetime.now().strftime("%Y-%m-%d")
+	
+	locator = mdates.AutoDateLocator()
+	formatter = mdates.ConciseDateFormatter(locator)
+	formatter.formats = ['%y',  # ticks are mostly years
+                         '%b',       # ticks are mostly months
+                         '%d',       # ticks are mostly days
+                         '%H:%M',    # hrs
+                         '%H:%M',    # min
+                         '%S.%f', ]  # secs
+    # these are mostly just the level above...
+	formatter.zero_formats = [''] + formatter.formats[:-1]
+    # ...except for ticks that are mostly hours, then it is nice to have
+    # month-day:
+	formatter.zero_formats[3] = '%d-%b'
+	formatter.offset_formats = ['',
+                                '%Y',
+                                '%b %Y',
+                                '%d %b %Y',
+                                '%d %b %Y',
+                                '%d %b %Y %H:%M', ]
 	if(len(data)<=days and len(data)!=0): #Check the length of data
 		header=rateType+" for Gas Counter "+str(index+1) #header of page
 		GUI_GraphHeaderLabel=tk.Label(GUI_GraphicsCanvas, text=header,  fg="firebrick",bg='white',  
@@ -301,22 +367,41 @@ def graphIt(days, data, index,rateType,gtype): #This function graphs the data ba
 		line.get_tk_widget().place(x=int(w*0.0014),y=int(h*0.116), relwidth=0.80, relheight=0.85) #Place the line graph
 		ax.plot(data,marker='o', markersize=8, linestyle='-', label=rateType+' Resample', color='red') #plot the data
 		ax.set_ylabel('Volume (ml)',size=14) #set the y axis label
-		ax.xaxis.set_major_locator(locator) #set the x axis locator
-		ax.xaxis.set_major_formatter(formatter) #set format
+
 		ax.grid(True) #Place grid on the graph plot
 
 		for i,j in data.Volume.items(): #anotate the points on the graph
 		    ax.annotate(str(j), xy=(i, j),size=14) #place in x,y axis
 
-		if(gtype==0): #gas type graph for 24 hours
+		if(gtype==0): #gas type graph for 24 hours	
+			now=datetime.datetime.now().strftime("%m-%d %H:%M") #get today's date
+			desiredRange=datetime.timedelta(hours=24) #obtain date for last 24 hrs
+			hours=(datetime.datetime.now()-desiredRange).strftime("%m-%d %H:%M")  #Get the date
+			ax.xaxis.set_major_locator(locator)
+			ax.xaxis.set_major_formatter(formatter)
+			ax.set_xlim(hours,now)
 			ax.set_xlabel('Last 24 Hours',size=14) #set the x axis label
 			GUI_24HourButton.configure(bg='firebrick',fg='white',relief=SUNKEN)
+
 		if(gtype==1): #gas type graph for last 7 days
-			 ax.set_xlabel('Last 7 days',size=14) #set the y axis label
-			 GUI_WeekButton.configure(bg='firebrick',fg='white',relief=GROOVE)
+			desiredRange=datetime.timedelta(days=7)
+			week=(datetime.datetime.now()-desiredRange).strftime("%Y-%m-%d")
+			# locator = mdates.AutoDateLocator(minticks=1, maxticks=8)
+			# formatter = mdates.ConciseDateFormatter(locator)
+			ax.xaxis.set_major_locator(locator)
+			ax.xaxis.set_major_formatter(formatter)
+			ax.set_xlim(week,today)
+			ax.set_xlabel('Last 7 days',size=14) #set the y axis label
+			GUI_WeekButton.configure(bg='firebrick',fg='white',relief=GROOVE)
+
 		if(gtype==2): #gas type graph for last 30 days
-			 ax.set_xlabel('Last 30 days',size=14) #set the x axis label
-			 GUI_MonthButton.configure(bg='firebrick',fg='white', relief=GROOVE)
+			desiredRange=datetime.timedelta(days=31)
+			month=(datetime.datetime.now()-desiredRange).strftime("%Y-%m-%d")
+			ax.xaxis.set_major_locator(locator)
+			ax.xaxis.set_major_formatter(formatter)
+			ax.set_xlim(month,today)
+			ax.set_xlabel('Last 30 days',size=14) #set the x axis label
+			GUI_MonthButton.configure(bg='firebrick',fg='white', relief=GROOVE)
 
 	else: #If the length of the data is equal to 0
 		header="Not enough data to graph the "+ rateType+" for Gas Counter "+str(index+1)+"\nTry again later or pick another option"
@@ -332,31 +417,6 @@ def _SerialPortChange():
 	global com
 	com = GUI_SerialPortValue.get()
 	return True
-
-##############################################################################################################################
-##############################################Start of the Program ###########################################################
-# global A
-# A = ard.ArdConnect(com)
-# ard.ArdSetup(A)
-
-#### Arduino Serial port
-# Port in which Arduino is connected
-com_arr = []*30 #array of ports
-# for windows
-com_arr.append('COM3')
-com_arr.append('COM4')
-com_arr.append('COM7')
-com_arr.append('COM11')
-com_arr.append('COM12')
-com_arr.append('COM13')
-com_arr.append('COM14')
-com_arr.append('COM15')
-# for Raspberry PI
-com_arr.append('/dev/ttyACM1')
-com_arr.append('/dev/ttyACM2')
-com_arr.append('/dev/ttyACM3')
-com_arr.append('/dev/ttyUSB0')
-com_arr.append('/dev/ttyUSB1')
 
 
 ## Main window size and zoom(temporary)
@@ -421,13 +481,14 @@ GUI_GraphicsCanvas= tk.Canvas(GUI_window, bg='white') #create canvas
 GUI_GraphicsCanvas.place(x= int(w*0.202) ,y=0  ,width= 8*(w//10) , height= 11*(h//10)) #style canvas
 
 ############# Status Bar #########################################################
+
 GUI_SerialPortLabel = tk.Label(GUI_LeftPanelLeftBar,text='PORT',bg="firebrick",fg="white", font=("times", int(11*zl), "bold"), anchor='n')
 GUI_SerialPortLabel.place(x=int(w*0.004),y=int(h*0.92), width=int(w*0.05),height=int(h*0.046))
 #
 GUI_SerialPortValue = tk.Spinbox(GUI_LeftPanelLeftBar, values=com_arr, bg= 'white', font= 10, command= _SerialPortChange)
-GUI_SerialPortValue.place(x=int(w*0.055),y=int(h*0.92), relwidth= 1-0.75, height=int(h*0.040))
+GUI_SerialPortValue.place(x=int(w*0.055),y=int(h*0.92), relwidth= 1-0.7, height=int(h*0.040))
 # #ARDUINO STATUSd
-GUI_StatusInfo=tk.Label(GUI_LeftPanelLeftBar,bg= 'firebrick',anchor='e',text='CXN',fg="white",font=("times", int(11*zl), "bold"))
+GUI_StatusInfo=tk.Label(GUI_LeftPanelLeftBar,bg= 'firebrick',anchor='e',text=connectS,fg="white",font=("times", int(11*zl), "bold"))
 GUI_StatusInfo.place(x=int(w*0.12),y=int(h*0.92), width=int(w*0.05),height=int(h*0.046))
 ##################################################################################
 path = "image.png" #dummy image for intro
@@ -437,5 +498,9 @@ panel.pack(side = "bottom", fill = "both", expand = "yes") #pack overall
 
 #The program will not work without this loops
 GUI_window.mainloop() #keep the program in a continuous loop
-sys.exit()
 
+
+threading1.cancel()
+threading2.cancel()
+threading3.cancel()
+sys.exit()
