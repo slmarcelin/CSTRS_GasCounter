@@ -16,17 +16,20 @@ ticks=[0]*30;    #Will contain the pin reading outputs
 volume=[];       #For each tick, volume will be increased
 Files=[]         #Files contains the names of the files
 allFiles=[]      #Troubleshooting array of files
+Counters=[]
 
 for i in range(30):  #For loop goes from 0-29 because we have 30 gas counters
     Files.append(" ")  #Initialize the arrays
-    Counters.append(" ")
     allFiles.append(" ")
+    Counters.append(" ")
 
 init=22; #First input pin number for first Gas Counter
 for i in range(30):
     reed_switch.append(init); #Append the pin numbers to the reed_switch array
     volume.append(0); #Initialize the volume array to 0
     init=init+1;       #Increase the pin id number
+    number=str(i+1)
+    Counters[i]="Gas Counter "+number;
 
 ## CONNECT FUNCTION ##
 def ArdConnect(com):

@@ -134,6 +134,7 @@ com_arr.append('/dev/ttyUSB0')
 com_arr.append('/dev/ttyUSB1')
 
 
+#Thread class is called to create the thread and assign tasks to each one 
 class MyThread(threading.Thread): #Thread class
     def run(self): #fires class automatically
         global A #reference to the arduino object
@@ -170,18 +171,21 @@ class MyThread(threading.Thread): #Thread class
                     connectS="CXN" #update label to connection
 
 
-def main(): #This is an important function which fires all the threads
-    global mythread
-    for x in range(30): 
+#main() function initialized all the threads through the thread class and passes the pin id
+def main(): 
+    global mythread #global thread object
+    for x in range(30): #30 thread for 30 pins
         pinID=x+22; #Create the initial thread id associated with the pinId                                            
         mythread = MyThread(name = format(pinID))  #Create the thread
         mythread.start()  #Start the thread
-        print("Thread for pin ID #"+pinID+" created\n") #Tell user that the thread has been created
+        print("Thread for pin ID #"+str(pinID)+" created\n") #Tell user that the thread has been created
         time.sleep(1) #Sleep for one second before starting new thread                              
                                             
 
-
-def resetVolume(): #This function is called each time an hour passes, volume is reset for more presice data
+#This function is called each time an hour passes, volume is reset for more presice data
+#If the volume is not reset, the graph will always have a linear correlation and the user would have
+#understanding on which hoour/day/month had more volume
+def resetVolume(): 
     global threading2
     threading2 = Timer(WAIT_Hour, resetVolume)
     threading2.start() #Set timer for 60 mns
@@ -189,6 +193,7 @@ def resetVolume(): #This function is called each time an hour passes, volume is 
     	ard.volume[i]=0 #for each counter
 
 
+#This function is called each time a day passes, volume is reset for more presice data
 def oneDay(): #This function is called each time a day passes, volume is reset, files are verified
     global threading3
     threading3=Timer(WAIT_Day, oneDay)#Set timer for 24 hrs
@@ -223,13 +228,15 @@ print(A+"\n") #Print arduino object
 
 resetVolume() #start the volume reset timer
 oneDay() #check if 30 days has passes, reset the volume, check size of file
-main()
+main() #main() initializes threads for each pins
 
+#deleteChildren function destroys previous canvas to prevent code from crashing
 def deleteChildren():
 	for child in GUI_window.winfo_children():
 		if (child !=GUI_LeftPanelLeftBar):
 			child.destroy()
 
+#Each time a use selects a different counter
 def selection_changed(event): #Get the selection from the combobox
 	selected=counterMenu.current() #Get the index of the selected Gas counter
 	### Create default Graph Frame
@@ -454,6 +461,7 @@ GUI_window.geometry('{}x{}'.format(int(w*0.5) , int(h*0.5))) #set height and wid
 GUI_window.state("zoomed") #This only works once
 GUI_window.configure(bg='white') #background white
 GUI_window.resizable(0,0) #do not allow resize because it messes the ratio
+
 
 GUI_LeftPanelLeftBar = tk.Canvas(GUI_window, bg="firebrick" ) #Left panel holds menu
 GUI_LeftPanelLeftBar.place(x=0,y=0 ,height= h, width=(w*0.2) ) #Place panel
