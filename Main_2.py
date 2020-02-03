@@ -105,9 +105,10 @@ from PyQt5.QtWidgets import QApplication, QWidget
 
 WAIT_Hour = 3600  #60 mins of seconds
 WAIT_Day=86400  #24 hours of seconds
-Fast=2    #1/7 of seconds
+Fast=1    #1/7 of seconds
 Mb=1000000   #size of 1 MB is 1000000 bytes
 global connectS
+global mythread
 connectS = "N-CXN"
 
 ##########################################FUNCTIONS##############################################################################
@@ -133,35 +134,51 @@ com_arr.append('/dev/ttyUSB0')
 com_arr.append('/dev/ttyUSB1')
 
 
+class MyThread(threading.Thread): #Thread class
+    def run(self): #fires class automatically
+        global A #reference to the arduino object
+        while True: #While loop to keep running the threads
+            if ard.run :  #If the arduino is running check all counters at the same time and do debouncing
+                value=int(self.getName()) #Get the current pinId       
+                connectS="CXN"  #Set the connectS label to connection status
+                ard.ReadSwitch(A,value)  #Read the inputs of the current pin Id
+                index=value-22 #Get the index id of the current pin by substracting 22 which is the initial pin
+                current=ard.ticks[index] #save the current tick read into a varriable
+
+                if (current==0): #If the pin is driven to low, a tick has happened
+                    print("Volume increased for Counter of pin ID:"+str(value)) #troubleshooting message for user
+                    ard.volume[index]=ard.volume[index]+30 #Increase the volume for this particular counter
+                    filePath=ard.folder+"\\"+ard.Files[0][index] #If there is a tick, save to the right csv file
+                    fd = open(filePath,'a')  #open the csv file that corresponds to the counter
+                    col1=str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))+"," #The current data
+                    row=col1+str(ard.volume[index])+"\n"  #The date and the volume of that Gas counter
+                    fd.write(row) #Write to the file
+                    fd.flush()
+                    fd.close()  #close the file
+                    time.sleep(2.5) #debouncing to make sure that the pin output is not repeating
+                    ard.ticks[index]=1 #set the pin output back to high
+
+                time.sleep(0.02) #sleep a bit before starting reading process of same thread pin
+                                                     
+
+            else:
+                print("Port selected:" +com) #remind user of the com port name selected
+                A = ard.ArdConnect(com) #retry another connection with arduino
+                connectS="N-CXN" #update lable to no connection
+                if ard.run: #if succeeded
+                    ard.ArdSetup(A) #Setup arduino
+                    connectS="CXN" #update label to connection
 
 
-def getInput():  #Get input from the Gas counter every 0.25 seconds
-	global A, threading1
-	threading1 = Timer(Fast, getInput)  #Set the timer
-	threading1.start()  #Set the timer
-
-	if ard.run :  #If the arduino is running
-		connectS="CXN"
-		ard.ReadSwitch(A)  #Read the inputs
-		print("Reed Switch output list:")
-		print(ard.ticks)
-		for i in range(30):  #we have 30 inputs fron 30 gas Counters
-			if(ard.ticks[i]==1): #ticks array holds reed switch values for each counter
-				ard.volume[i]=ard.volume[i]+30 #Increase the volume for this particular counter
-				filePath=ard.folder+"\\"+ard.Files[0][i] #If there is a tick, save to the right csv file
-				fd = open(filePath,'a')  #open the csv file that corresponds to the counter
-				col1=str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))+"," #The current data
-				row=col1+str(ard.volume[i])+"\n"  #The date and the volume of that Gas counter
-				fd.write(row) #Write to the file
-				fd.flush()
-				fd.close()  #close the file
-	else:
-		print("Port selected:" +com)
-		A = ard.ArdConnect(com)
-		if ard.run:
-			ard.ArdSetup(A)
-			connectS="CXN"
-
+def main(): #This is an important function which fires all the threads
+    global mythread
+    for x in range(30): 
+        pinID=x+22; #Create the initial thread id associated with the pinId                                            
+        mythread = MyThread(name = format(pinID))  #Create the thread
+        mythread.start()  #Start the thread
+        print("Thread for pin ID #"+pinID+" created\n") #Tell user that the thread has been created
+        time.sleep(1) #Sleep for one second before starting new thread                              
+                                            
 
 
 def resetVolume(): #This function is called each time an hour passes, volume is reset for more presice data
@@ -184,29 +201,29 @@ def oneDay(): #This function is called each time a day passes, volume is reset, 
     	passFile = datetime.datetime.strptime(filep[0], '%Y-%m-%d').date() #convert the string date to datetime object
     	days=(today-passFile).days #calculate teh difference between file creation date and current date
     	size=os.path.getsize(filePath) #Get the size of the file
+
     	if(days>=30 or size>=(10*Mb)): #if 30 days has passed or the file size is 10 MB, delete the file and create a new one
-    		os.remove(filePath); #remove the file
+    		os.remove(filePath); #remove the old/large file
     		ard.Files[0][i]=str(today)+" - GC"+str(i+1)+".csv" #update the title to today's date
     		filePath=ard.folder+"\\"+ard.Files[0][i] #get the new file path
-    		fd = open(filePath,'a')
-    		firstRow = "Date-Time,Volume\n"
-    		fd.write(firstRow)
+    		fd = open(filePath,'a') #create the new file
+    		firstRow = "Date-Time,Volume\n" #create first line to file or in our case first two columns
+    		fd.write(firstRow) #Write first line to file
     		fd.flush()
-    		fd.close() 
+    		fd.close() #close the file
 
 
-##############################################################################
-######## INITIAL CODE ########################################################
-global A
-print("Port selected:" +com)
-A = ard.ArdConnect(com)
-ard.ArdSetup(A)
-print(A)
+################################################ Main CODE Brain #####################################################
+global A #global Arduino object
+print("Port selected:" +com) #Tell user the com port selected
+A = ard.ArdConnect(com) #Connect to the arduino
+ard.ArdSetup(A) #Setup pins
+print(A+"\n") #Print arduino object
 
 
-getInput() #start the input retriever timer
 resetVolume() #start the volume reset timer
 oneDay() #check if 30 days has passes, reset the volume, check size of file
+main()
 
 def deleteChildren():
 	for child in GUI_window.winfo_children():
@@ -498,9 +515,7 @@ panel.pack(side = "bottom", fill = "both", expand = "yes") #pack overall
 
 #The program will not work without this loops
 GUI_window.mainloop() #keep the program in a continuous loop
-
-
-threading1.cancel()
 threading2.cancel()
 threading3.cancel()
+mythread.join()
 sys.exit()

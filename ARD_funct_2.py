@@ -2,107 +2,106 @@
 from nanpy import (ArduinoApi, SerialManager, Stepper)
 import time
 import datetime
+import threading
 from random import randrange
 import os,sys
 import glob
 import csv
-run =False
+run =False #Boolean flag which checks if the arduino is connected
 
 
 # Initialize arrays #
-reed_switch=[];
-ticks=[0]*30;
-volume=[];
-Files=[]
-allFiles=[]
-Counters=[]
+reed_switch=[];  #Will contain the list of all switch pin numbers
+ticks=[0]*30;    #Will contain the pin reading outputs
+volume=[];       #For each tick, volume will be increased
+Files=[]         #Files contains the names of the files
+allFiles=[]      #Troubleshooting array of files
 
-for i in range(30):
-    Files.append(" ")
+for i in range(30):  #For loop goes from 0-29 because we have 30 gas counters
+    Files.append(" ")  #Initialize the arrays
     Counters.append(" ")
     allFiles.append(" ")
 
-#First input pin for Gas Counter
-init=22;
+init=22; #First input pin number for first Gas Counter
 for i in range(30):
-    reed_switch.append(init);
-    volume.append(0);
-    init=init+1;
-    date=str(datetime.datetime.now().date())
-    number=str(i+1)
-    Counters[i]="Gas Counter "+number;
+    reed_switch.append(init); #Append the pin numbers to the reed_switch array
+    volume.append(0); #Initialize the volume array to 0
+    init=init+1;       #Increase the pin id number
 
 ## CONNECT FUNCTION ##
 def ArdConnect(com):
     global run
     try:
-        print('\nAttempting to connect')
+        print('\nAttempting to connect') #Print message to user
         print('Connecting...')
-        connection = SerialManager(device=com)
-        ard = ArduinoApi(connection=connection)
-        print("Arduino connected")
-        run = True
-        return ard
+        connection = SerialManager(device=com)  #Connected to the provided serial com name
+        ard = ArduinoApi(connection=connection) #Connect to the arduino
+        print("Arduino connected")    #Print message to user
+        run = True   #set run flag to true
+        return ard   #return the arduino object
     except:
-        run=False
-        print('Error :Connection Failed!!')
-        return 'EMPTY'
+        run=False  #if tiem runs out set flag to False
+        print('Error :Connection Failed!!') #Print message to user
+        return 'EMPTY'  #Return an empty object(String)
 
 # ## SETUP Arduino with the reed switch pins ##
 def ArdSetup(ard):
      global run
-     run = True
+     run = True  #Set initial run flag to be true
      try:
-        # UNCOMMENT FOR ARDUINO MEGA
-        for i in range(30):  
-            ard.pinMode(reed_switch[i], ard.INPUT)
-            print('pin #'+reed_switch[i]+' is set')
+        for i in range(30): 
+            ard.pinMode(reed_switch[i], ard.OUTPUT) #Set the pins as outputs
+            ard.digitalWrite(reed_switch[i], ard.HIGH) #Write the pins to high
+            print('pin # '+str(reed_switch[i])+' is set') #Print pin check message to user
      except:
-         run=False
-         print('[Arduino setup...Failed]')
+         run=False  #else set flag to False
+         print('[Arduino setup...Failed]') #Print error message to user
 
-## Get switch readings from the gas counters
-def ReadSwitch(ard):
+## Reads the pin status from the Arduino###
+def ReadSwitch(ard,PinId):
     global run
     try:
-        # UNCOMMENT FOR ARDUINO MEGA
-        for i in range(30):
-            ticks[i]=ard.digitalRead(reed_switch[i])
-            run = True
+        Pid=int(PinId) #convert the passed pin id to integer
+        ticks[Pid-22]=ard.digitalRead(Pid) #Read the pin value and write to array
     except:
-        run=False
-        print("Switch readings Failed!")
+        run=False  #If error occured
+        print("Switch readings Failed!") #Let user know that the readings failed
+
 
 #Folder that holds all the csv files
 folder="Counter_Logs"
-#This is a very fragile if statement! Please do not change anything without consulting me
+
+#This is a very fragile if statement! Please do not change anything
 #This can mess up the entire program
 #this if statement creates the folder if it does not exist as well as the files
-if not os.path.exists(folder):
-    os.mkdir(folder)
+date=str(datetime.datetime.now().date()) #Get today's date
+if not os.path.exists(folder): #If the folder does not exist
+    os.mkdir(folder)  #create the folder
     for i in range(30):
-        Files[i]=date+" - GC"+str(i+1)+".csv"
+        Files[i]=date+" - GC"+str(i+1)+".csv" #Create the names of the files
        
-        allFiles[i]=Files[i]
-        filePath=folder+"\\"+Files[i]
-        fd = open(filePath,'a')
-        firstRow = "Date-Time,Volume\n"
-        fd.write(str(firstRow))
+        allFiles[i]=Files[i]  #place file names in troubleshooting array
+        filePath=folder+"\\"+Files[i]  #Get the new filepath by combining the folder name and new file name
+        fd = open(filePath,'a')  #create file
+        firstRow = "Date-Time,Volume\n" #create first line to file or in our case first two columns
+        fd.write(str(firstRow))  #write first line to file
         fd.flush()
-        fd.close() 
+        fd.close()  #close the current file 
 
         if(i==29): #Very important, all the file names are saved in a csv file
-            filePath=folder+"\\"+"setup.csv"
-            open(filePath, 'a').close()
+            filePath=folder+"\\"+"setup.csv" #setup.csv contains all the files
+            open(filePath, 'a').close() #It is important to keep the names accessible to the program
             fd = os.open(filePath,os.O_RDWR)
             for k in range(30):
-                firstRow=str.encode(Files[k]+",");
+                firstRow=str.encode(Files[k]+","); #Write filenames to setup.csv
                 os.write(fd,firstRow)
-            os.close(fd)
+            os.close(fd) #Close the file
 
-if os.path.exists(folder):    
-    #Put all the file names inside a folder for application purposes
+if os.path.exists(folder): #If the folder exists, get the list of all file names
+    #Put all the file names inside an array for application purposes
     filePath=folder+"\\"+"setup.csv"
     with open(filePath, newline='') as csvfile:
-        Files= list(csv.reader(csvfile))
+        Files= list(csv.reader(csvfile)) #This array will be called throughout the program to access the files
+
+
 
