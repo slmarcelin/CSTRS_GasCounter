@@ -3,7 +3,8 @@ from nanpy import (ArduinoApi, SerialManager, Stepper)
 import time
 import datetime
 import threading
-from random import randrange
+
+
 import os,sys
 import glob
 import csv

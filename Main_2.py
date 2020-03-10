@@ -74,14 +74,14 @@
 import ARD_funct_2 as ard   #ArD_funct_2 has the major functions to connect to the arduino and get input values
 import tkinter as tk        #Tkinter is a GUI platform from python
 from tkinter import *       #Import all from tkinter
-from threading import Timer #This is used to assign timers
 from time import strftime, gmtime  #Use to convert the title of the csv files to datetime object
 import matplotlib.pyplot as plt    #Very very powerful tool to view datapoints
 import matplotlib.colors as mcolors #Color used to style the chart
+import threading #for scheduling
+from threading import Timer #This is used to assign timers
 from tkinter import font  #Font of the frames
 import datetime  #Datetime to get real time updates
 import time   #to manipulate time
-import threading #for scheduling
 import PIL   #install pip install pillow
 from pandas import DataFrame #Powerful tool to analyze data from csv files
 from PIL import ImageTk, Image,ImageDraw,ImageFont  #Pil to display images
@@ -109,15 +109,16 @@ Fast=1    #1/7 of seconds
 Mb=1000000   #size of 1 MB is 1000000 bytes
 global connectS
 global mythread
+global stop_threads
 connectS = "N-CXN"
 
 ##########################################FUNCTIONS##############################################################################
 #### Arduino Serial port
 # Port in which Arduino is connected
 com_arr = []*30 #array of ports
-
+stop_threads = False
 # for windows
-com = 'COM13'
+com = 'COM3'
 com_arr.append('COM13')
 com_arr.append('COM3')
 com_arr.append('COM4')
@@ -135,9 +136,9 @@ com_arr.append('/dev/ttyUSB1')
 
 
 #Thread class is called to create the thread and assign tasks to each one 
-class MyThread(threading.Thread): #Thread class
-    def run(self): #fires class automatically
-        global A #reference to the arduino object
+class MyThread(threading.Thread): #Each of the 
+    def run(self):
+        global A
         while True: #While loop to keep running the threads
             if ard.run :  #If the arduino is running check all counters at the same time and do debouncing
                 value=int(self.getName()) #Get the current pinId       
@@ -159,6 +160,8 @@ class MyThread(threading.Thread): #Thread class
                     time.sleep(2.5) #debouncing to make sure that the pin output is not repeating
                     ard.ticks[index]=1 #set the pin output back to high
 
+                if stop_threads: 
+                    break
                 time.sleep(0.02) #sleep a bit before starting reading process of same thread pin
                                                      
 
@@ -200,30 +203,30 @@ def oneDay(): #This function is called each time a day passes, volume is reset, 
     threading3.start() #Set timer for 24 hrs
     today=datetime.datetime.now().date() #Get the current date
     for i in range(30):  #For 30 reactors
-    	ard.volume[i]=0  #reset the volume for each counter
-    	filePath=ard.folder+"\\"+ard.Files[0][i] #filepath for each counter
-    	filep=ard.Files[0][i].split(" ")  #split the title pf the string to get the date part
-    	passFile = datetime.datetime.strptime(filep[0], '%Y-%m-%d').date() #convert the string date to datetime object
-    	days=(today-passFile).days #calculate teh difference between file creation date and current date
-    	size=os.path.getsize(filePath) #Get the size of the file
+        ard.volume[i]=0  #reset the volume for each counter
+        filePath=ard.folder+"/"+ard.Files[0][i] #filepath for each counter
+        filep=ard.Files[0][i].split(" ")  #split the title pf the string to get the date part
+        passFile = datetime.datetime.strptime(filep[0], '%Y-%m-%d').date() #convert the string date to datetime object
+        days=(today-passFile).days #calculate teh difference between file creation date and current date
+        size=os.path.getsize(filePath) #Get the size of the file
 
-    	if(days>=30 or size>=(10*Mb)): #if 30 days has passed or the file size is 10 MB, delete the file and create a new one
-    		os.remove(filePath); #remove the old/large file
-    		ard.Files[0][i]=str(today)+" - GC"+str(i+1)+".csv" #update the title to today's date
-    		filePath=ard.folder+"\\"+ard.Files[0][i] #get the new file path
-    		fd = open(filePath,'a') #create the new file
-    		firstRow = "Date-Time,Volume\n" #create first line to file or in our case first two columns
-    		fd.write(firstRow) #Write first line to file
-    		fd.flush()
-    		fd.close() #close the file
-
+        if(days>=30 or size>=(10*Mb)): #if 30 days has passed or the file size is 10 MB, delete the file and create a new one
+            os.remove(filePath); #remove the old/large file
+            os.remove(ard.folder+"/"+"setup.csv");
+            ard.Files[0][i]=str(today)+" - GC"+str(i+1)+".csv" #update the title to today's date
+            filePath=ard.folder+"/"+ard.Files[0][i] #get the new file path
+            fd = open(filePath,'a') #create the new file
+            firstRow = "Date-Time,Volume\n" #create first line to file or in our case first two columns
+            fd.write(firstRow) #Write first line to file
+            fd.flush()
+            fd.close() #close the file
 
 ################################################ Main CODE Brain #####################################################
 global A #global Arduino object
 print("Port selected:" +com) #Tell user the com port selected
 A = ard.ArdConnect(com) #Connect to the arduino
 ard.ArdSetup(A) #Setup pins
-print(A+"\n") #Print arduino object
+print(A) #Print arduino object
 
 
 resetVolume() #start the volume reset timer
@@ -299,7 +302,7 @@ def HourRate(index): #Resamples the data based on hours
 	FullData = pd.read_csv(ard.folder+"\\"+ard.Files[0][index], index_col=0) #Fetch the csv file for the selected counter
 	FullData.index= pd.to_datetime(FullData.index,errors='coerce', format='%Y-%m-%d %H:%M:%S') #set the first column to datetime
 	toPlot=FullData.loc[str(dayRange) : str(now)] #Select the data based on that
-	newHour=toPlot.resample('H').sum()  #Resample the data based on hours and sum the data for each hour
+	newHour=toPlot.resample('5min').sum()  #Resample the data based on hours and sum the data for each hour
 	graphIt(25, newHour, index, rateType,0) #Send everything to the graphIt function
 
 
@@ -328,114 +331,113 @@ def MonthRate(index): #Resamples the data based on the last 30 days
 	graphIt(32, new_Month, index,rateType,2) #Send everything to the graphIt function
 
 def ViewData(index): #This allows the user to view the full list of data from the csv
-	FullData = pd.read_csv(ard.folder+"\\"+ard.Files[0][index], index_col=0) #Fetch the csv file for the selected counter
-	FullData.index= pd.to_datetime(FullData.index,errors='coerce', format='%Y-%m-%d %H:%M:%S') #set the first column to datetime
-	if(len(FullData)!=0):
-		show(FullData) #This will show the data and allow to view statistics and a histogram
-	else: #in case the dataset is empty popul error message
-		messagebox.showinfo("Empty CSV file", "There is no data availabe at the moment for Counter #"+str(index+1)) #error message
+    FullData = pd.read_csv(ard.folder+"\\"+ard.Files[0][index], index_col=0) #Fetch the csv file for the selected counter
+    FullData.index= pd.to_datetime(FullData.index,errors='coerce', format='%Y-%m-%d %H:%M:%S') #set the first column to datetime
+    if(len(FullData)!=0):
+        show(FullData) #This will show the data and allow to view statistics and a histogram
+    else: #in case the dataset is empty popul error message
+        messagebox.showinfo("Empty CSV file", "There is no data availabe at the moment for Counter #"+str(index+1)) #error message
 
 def graphIt(days, data, index,rateType,gtype): #This function graphs the data based on selected counter
-	#This arrays formats the x axis, according to time or dates
-	deleteChildren()
+    #This arrays formats the x axis, according to time or dates
+    deleteChildren()
 
-	GUI_GraphicsCanvas= tk.Canvas(GUI_window, bg='white') #canvas to hold the graph
-	GUI_GraphicsCanvas.place(x= int(w*0.202),y=0  ,width= 8*(w//10) , height= 9*(h//10)) #size and position of canvas
+    GUI_GraphicsCanvas= tk.Canvas(GUI_window, bg='white') #canvas to hold the graph
+    GUI_GraphicsCanvas.place(x= int(w*0.202),y=0  ,width= 8*(w//10) , height= 9*(h//10)) #size and position of canvas
 
-	GUI_24HourButton= tk.Button(GUI_GraphicsCanvas, text= "Hour Rate" , bg= 'white', 
-		command=lambda :HourRate(index), font=("Calibri", int(12*zl)))  #Button to access last 24 hours graph
-	GUI_24HourButton.place(x=int(w*0.64), y=int(h*0.208) , relwidth= 0.16, relheight=0.10) #Size and position of button
+    GUI_24HourButton= tk.Button(GUI_GraphicsCanvas, text= "Hour Rate" , bg= 'white', 
+    command=lambda :HourRate(index), font=("Calibri", int(12*zl)))  #Button to access last 24 hours graph
+    GUI_24HourButton.place(x=int(w*0.64), y=int(h*0.208) , relwidth= 0.16, relheight=0.10) #Size and position of button
 
-	GUI_WeekButton= tk.Button(GUI_GraphicsCanvas, text= "Week Rate" , bg= 'white', 
-		command=lambda :WeekRate(index),font=("Calibri", int(12*zl))) #Button to access last 7 days graph
-	GUI_WeekButton.place(x=int(w*0.64), y=int(h*0.297) , relwidth= 0.16, relheight=0.10) #Size and position of button
+    GUI_WeekButton= tk.Button(GUI_GraphicsCanvas, text= "Week Rate" , bg= 'white', 
+    command=lambda :WeekRate(index),font=("Calibri", int(12*zl))) #Button to access last 7 days graph
+    GUI_WeekButton.place(x=int(w*0.64), y=int(h*0.297) , relwidth= 0.16, relheight=0.10) #Size and position of button
 
-	GUI_MonthButton= tk.Button(GUI_GraphicsCanvas, text= "Month Rate" , bg= 'white',
-		command=lambda :MonthRate(index), font=("Calibri", int(12*zl))) #Button to access last 30 days graph
-	GUI_MonthButton.place(x=int(w*0.64), y=int(h*0.386) , relwidth= 0.16, relheight=0.10) #Size and position of button
+    GUI_MonthButton= tk.Button(GUI_GraphicsCanvas, text= "Month Rate" , bg= 'white',
+    command=lambda :MonthRate(index), font=("Calibri", int(12*zl))) #Button to access last 30 days graph
+    GUI_MonthButton.place(x=int(w*0.64), y=int(h*0.386) , relwidth= 0.16, relheight=0.10) #Size and position of button
 
-	DataButton= tk.Button(GUI_GraphicsCanvas, text= "View data" , bg= 'white',
-	command=lambda :ViewData(index), font=("Calibri", int(12*zl)))  #Button to view overall data
-	DataButton.place(x=int(w*0.64), y=int(h*0.476) , relwidth= 0.16, relheight=0.10)  #place the month button in the graph window
+    DataButton= tk.Button(GUI_GraphicsCanvas, text= "View data" , bg= 'white',
+    command=lambda :ViewData(index), font=("Calibri", int(12*zl)))  #Button to view overall data
+    DataButton.place(x=int(w*0.64), y=int(h*0.476) , relwidth= 0.16, relheight=0.10)  #place the month button in the graph window
 
-	today=datetime.datetime.now().strftime("%Y-%m-%d")
+    today=datetime.datetime.now().strftime("%Y-%m-%d")
 	
-	locator = mdates.AutoDateLocator()
-	formatter = mdates.ConciseDateFormatter(locator)
-	formatter.formats = ['%y',  # ticks are mostly years
+    locator = mdates.AutoDateLocator()
+    formatter = mdates.ConciseDateFormatter(locator)
+    formatter.formats = ['%y',  # ticks are mostly years
                          '%b',       # ticks are mostly months
                          '%d',       # ticks are mostly days
                          '%H:%M',    # hrs
                          '%H:%M',    # min
                          '%S.%f', ]  # secs
     # these are mostly just the level above...
-	formatter.zero_formats = [''] + formatter.formats[:-1]
+    formatter.zero_formats = [''] + formatter.formats[:-1]
     # ...except for ticks that are mostly hours, then it is nice to have
     # month-day:
-	formatter.zero_formats[3] = '%d-%b'
-	formatter.offset_formats = ['',
+    formatter.zero_formats[3] = '%d-%b'
+    formatter.offset_formats = ['',
                                 '%Y',
                                 '%b %Y',
                                 '%d %b %Y',
                                 '%d %b %Y',
                                 '%d %b %Y %H:%M', ]
-	if(len(data)<=days and len(data)!=0): #Check the length of data
-		header=rateType+" for Gas Counter "+str(index+1) #header of page
-		GUI_GraphHeaderLabel=tk.Label(GUI_GraphicsCanvas, text=header,  fg="firebrick",bg='white',  
-			font=("Calibri", int(18*zl), "bold"), anchor='n') #place header
-		GUI_GraphHeaderLabel.place(x=int(w*0.17),y=(h*0.069))
+    if(len(data)<=days and len(data)!=0): #Check the length of data
+        header=rateType+" for Gas Counter "+str(index+1) #header of page
+        GUI_GraphHeaderLabel=tk.Label(GUI_GraphicsCanvas, text=header,  fg="firebrick",bg='white',  
+            font=("Calibri", int(18*zl), "bold"), anchor='n') #place header
+        GUI_GraphHeaderLabel.place(x=int(w*0.17),y=(h*0.069))
 
-		figure = plt.Figure(figsize=(14,16), dpi=100) #figure to hold plot
-		ax = figure.add_subplot(111) #we only need one plot
-		line = FigureCanvasTkAgg(figure, GUI_GraphicsCanvas) #we have a line graph
-		line.get_tk_widget().place(x=int(w*0.0014),y=int(h*0.116), relwidth=0.80, relheight=0.85) #Place the line graph
-		ax.plot(data,marker='o', markersize=8, linestyle='-', label=rateType+' Resample', color='red') #plot the data
-		ax.set_ylabel('Volume (ml)',size=14) #set the y axis label
+        figure = plt.Figure(figsize=(14,16), dpi=100) #figure to hold plot
+        ax = figure.add_subplot(111) #we only need one plot
+        line = FigureCanvasTkAgg(figure, GUI_GraphicsCanvas) #we have a line graph
+        line.get_tk_widget().place(x=int(w*0.0014),y=int(h*0.116), relwidth=0.80, relheight=0.85) #Place the line graph
+        ax.plot(data,marker='o', markersize=8, linestyle='-', label=rateType+' Resample', color='red',clip_on=False) #plot the data
+        ax.set_ylabel('Volume (ml)',size=14) #set the y axis label
+        ax.margins(0.05)
 
-		ax.grid(True) #Place grid on the graph plot
+        ax.grid(True) #Place grid on the graph plot
 
-		for i,j in data.Volume.items(): #anotate the points on the graph
-		    ax.annotate(str(j), xy=(i, j),size=14) #place in x,y axis
+        for i,j in data.Volume.items(): #anotate the points on the graph
+            ax.annotate(str(j), xy=(i, j),size=14) #place in x,y axis
 
-		if(gtype==0): #gas type graph for 24 hours	
-			now=datetime.datetime.now().strftime("%m-%d %H:%M") #get today's date
-			desiredRange=datetime.timedelta(hours=24) #obtain date for last 24 hrs
-			hours=(datetime.datetime.now()-desiredRange).strftime("%m-%d %H:%M")  #Get the date
-			ax.xaxis.set_major_locator(locator)
-			ax.xaxis.set_major_formatter(formatter)
-			ax.set_xlim(hours,now)
-			ax.set_xlabel('Last 24 Hours',size=14) #set the x axis label
-			GUI_24HourButton.configure(bg='firebrick',fg='white',relief=SUNKEN)
+        if(gtype==0): #gas type graph for 24 hours	
+            ax.xaxis.set_major_locator(locator)
+            ax.xaxis.set_major_formatter(formatter)
+            ax.tick_params(direction='out', length=24, width=1)
+            ax.margins(0.05)
+            ax.set_xlabel('Last 24 hours',size=14) #set the y axis label
+            GUI_24HourButton.configure(bg='firebrick',fg='white',relief=SUNKEN)
 
-		if(gtype==1): #gas type graph for last 7 days
-			desiredRange=datetime.timedelta(days=7)
-			week=(datetime.datetime.now()-desiredRange).strftime("%Y-%m-%d")
-			# locator = mdates.AutoDateLocator(minticks=1, maxticks=8)
-			# formatter = mdates.ConciseDateFormatter(locator)
-			ax.xaxis.set_major_locator(locator)
-			ax.xaxis.set_major_formatter(formatter)
-			ax.set_xlim(week,today)
-			ax.set_xlabel('Last 7 days',size=14) #set the y axis label
-			GUI_WeekButton.configure(bg='firebrick',fg='white',relief=GROOVE)
+        if(gtype==1): #gas type graph for last 7 days
+            desiredRange=datetime.timedelta(days=7)
+            week=(datetime.datetime.now()-desiredRange).strftime("%Y-%m-%d")
+            ax.xaxis.set_major_locator(locator)
+            ax.xaxis.set_major_formatter(formatter)
+            ax.tick_params(direction='out', length=7, width=1)
+            ax.set_xlim(week,today)
+            ax.margins(x=3)
+            ax.set_xlabel('Last 7 days',size=14) #set the y axis label
+            GUI_WeekButton.configure(bg='firebrick',fg='white',relief=GROOVE)
 
-		if(gtype==2): #gas type graph for last 30 days
-			desiredRange=datetime.timedelta(days=31)
-			month=(datetime.datetime.now()-desiredRange).strftime("%Y-%m-%d")
-			ax.xaxis.set_major_locator(locator)
-			ax.xaxis.set_major_formatter(formatter)
-			ax.set_xlim(month,today)
-			ax.set_xlabel('Last 30 days',size=14) #set the x axis label
-			GUI_MonthButton.configure(bg='firebrick',fg='white', relief=GROOVE)
+        if(gtype==2): #gas type graph for last 30 days
+            desiredRange=datetime.timedelta(days=30)
+            month=(datetime.datetime.now()-desiredRange).strftime("%Y-%m-%d")
+            ax.xaxis.set_major_locator(locator)
+            ax.xaxis.set_major_formatter(formatter)
+            ax.set_xlim(month,today)
+            ax.set_xlabel('Last 30 days',size=14) #set the x axis label
+            GUI_MonthButton.configure(bg='firebrick',fg='white', relief=GROOVE)
 
-	else: #If the length of the data is equal to 0
-		header="Not enough data to graph the "+ rateType+" for Gas Counter "+str(index+1)+"\nTry again later or pick another option"
-		GUI_GraphHeaderLabel=tk.Label(GUI_GraphicsCanvas, text=header,  fg="black",bg='white',  
-			font=("Calibri", int(14*zl), "bold"), anchor='n') #style label
-		GUI_GraphHeaderLabel.place(x=int(w*0.117),y=int(h*0.011)) #place label
-		figure = Figure(figsize=(8, 6), dpi=100) #create figure
-		plot = figure.add_subplot(1, 1, 1) #plot dummy graph
-		canvas = FigureCanvasTkAgg(figure, GUI_GraphicsCanvas) #creat canvas and place figure in canvas
-		canvas.get_tk_widget().grid(rowspan=50, sticky="nesw",padx=int(w*0.104),pady=int(h*0.10)) #place canvas in grid
+    else: #If the length of the data is equal to 0
+        header="Not enough data to graph the "+ rateType+" for Gas Counter "+str(index+1)+"\nTry again later or pick another option"
+        GUI_GraphHeaderLabel=tk.Label(GUI_GraphicsCanvas, text=header,  fg="black",bg='white',  
+            font=("Calibri", int(14*zl), "bold"), anchor='n') #style label
+        GUI_GraphHeaderLabel.place(x=int(w*0.117),y=int(h*0.011)) #place label
+        figure = Figure(figsize=(8, 6), dpi=100) #create figure
+        plot = figure.add_subplot(1, 1, 1) #plot dummy graph
+        canvas = FigureCanvasTkAgg(figure, GUI_GraphicsCanvas) #creat canvas and place figure in canvas
+        canvas.get_tk_widget().grid(rowspan=50, sticky="nesw",padx=int(w*0.104),pady=int(h*0.10)) #place canvas in grid
 
 def _SerialPortChange():
 	global com
@@ -449,16 +451,25 @@ zl=1.6  *z  # Font zoom
 
 
 GUI_window = tk.Tk() #Main window
-w, h = GUI_window.winfo_screenwidth(), GUI_window.winfo_screenheight() #height of window based on the computer size
+
+sw, sh = GUI_window.winfo_screenwidth(), GUI_window.winfo_screenheight() #height of window based on the computer size
+w = int(sw*z)
+h = int(sh*z)
+
+x =(sw/2) -(w/2)
+y =(sh/2) -(h/2)
+
+
 bigfont = font.Font(family="Helvetica",size=12) # Set font of the entire window
 GUI_window.option_add("*TCombobox*Listbox*Font", bigfont) #Add font to the combo-box
+GUI_window.geometry('{}x{}'.format(w ,h,0,0)) #set height and width of GUI window
 
-## Main window size and zoom(temporary)
-z=1         # ZOOM
-zl=1.6  *z  # Font zoom
 
-GUI_window.geometry('{}x{}'.format(int(w*0.5) , int(h*0.5))) #set height and width of GUI window
-GUI_window.state("zoomed") #This only works once
+if (os.name=='nt'):
+	GUI_window.state('zoomed')
+if (os.name=='posix'):
+	GUI_window.attributes('-zoomed',True)
+
 GUI_window.configure(bg='white') #background white
 GUI_window.resizable(0,0) #do not allow resize because it messes the ratio
 
@@ -525,5 +536,6 @@ panel.pack(side = "bottom", fill = "both", expand = "yes") #pack overall
 GUI_window.mainloop() #keep the program in a continuous loop
 threading2.cancel()
 threading3.cancel()
+stop_threads = True
 mythread.join()
 sys.exit()
