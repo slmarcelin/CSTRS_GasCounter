@@ -1,3 +1,4 @@
+
 #Refer to main python file for references
 from nanpy import (ArduinoApi, SerialManager, Stepper)
 import time
@@ -37,7 +38,7 @@ for i in range(30):
 def ArdConnect(com):
     global run
     try:
-        print('\nAttempting to connect') #Print message to user
+        print('\nAttempting to connect to the given port') #Print message to user
         print('Connecting...')
         connection = SerialManager(device=com)  #Connected to the provided serial com name
         ard = ArduinoApi(connection=connection) #Connect to the arduino
@@ -88,7 +89,7 @@ if not os.path.exists(folder): #If the folder does not exist
         Files[i]=date+" - GC"+str(i+1)+".csv" #Create the names of the files
        
         allFiles[i]=Files[i]  #place file names in troubleshooting array
-        filePath=folder+"/"+Files[i]  #Get the new filepath by combining the folder name and new file name
+        filePath=folder+"\\"+Files[i]  #Get the new filepath by combining the folder name and new file name
         fd = open(filePath,'a')  #create file
         firstRow = "Date-Time,Volume\n" #create first line to file or in our case first two columns
         fd.write(str(firstRow))  #write first line to file
@@ -96,7 +97,7 @@ if not os.path.exists(folder): #If the folder does not exist
         fd.close()  #close the current file 
 
         if(i==29): #Very important, all the file names are saved in a csv file
-            filePath=folder+"/"+"setup.csv" #setup.csv contains all the files
+            filePath=folder+"\\"+"setup.csv" #setup.csv contains all the files
             open(filePath, 'a').close() #It is important to keep the names accessible to the program
             fd = os.open(filePath,os.O_RDWR)
             for k in range(30):
@@ -106,7 +107,7 @@ if not os.path.exists(folder): #If the folder does not exist
 
 if os.path.exists(folder): #If the folder exists, get the list of all file names
     #Put all the file names inside an array for application purposes
-    filePath=folder+"/"+"setup.csv"
+    filePath=folder+"\\"+"setup.csv"
     with open(filePath, newline='') as csvfile:
         Files= list(csv.reader(csvfile)) #This array will be called throughout the program to access the files
 
