@@ -110,6 +110,7 @@ Fast=1    #1/7 of seconds
 Mb=1000000   #size of 1 MB is 1000000 bytes
 global connectS
 global mythread
+mythread=""
 global stop_threads
 global allFiles
 global selected
@@ -423,6 +424,10 @@ def graphIt(days, data, index,rateType,gtype): #This function graphs the data ba
         canvas.get_tk_widget().grid(rowspan=50, sticky="nesw",padx=int(w*0.104),pady=int(h*0.10)) #place canvas in grid
 
 def _SerialPortChange(event):
+    stop_threads=True
+    if(mythread !=""):
+        mythread.join()
+
     com=GUI_SerialPortValue.get()
     A = ard.ArdConnect(com) #Connect to the arduino
     if(ard.run):
@@ -526,7 +531,6 @@ panel.pack(side = "bottom", fill = "both", expand = "yes") #pack overall
 
 #The program will not work without this loops
 GUI_window.mainloop() #keep the program in a continuous loop
-
 threading2.cancel()
 threading3.cancel()
 stop_threads = True
