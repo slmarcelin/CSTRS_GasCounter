@@ -98,7 +98,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg  #Place figures 
 from pandas.plotting import register_matplotlib_converters  #Register matpotlib to pandas
 import matplotlib.dates as mdates  #For date formatting purposes
 from matplotlib.dates import AutoDateFormatter, AutoDateLocator
-from pandasgui import show
+
 import numpy as np
 register_matplotlib_converters()  #register matpotlib converters
 from PyQt5.QtWidgets import QApplication, QWidget
@@ -273,9 +273,7 @@ def selection_changed(event): #Get the selection from the combobox
         command=lambda :MonthRate(selected), font=("Calibri", int(12*zl)))  #create a month button  
     GUI_MonthButton.place(x=int(w*0.54), y=int(h*0.35) , relwidth= 0.18, relheight=0.10)  #place the month button in the graph window
 
-    DataButton= tk.Button(GUI_GraphicsCanvas, text= "View data" , bg= 'white',
-    command=lambda :ViewData(selected), font=("Calibri", int(12*zl)))  #create a month button  
-    DataButton.place(x=int(w*0.54), y=int(h*0.44) , relwidth= 0.18, relheight=0.10)  #place the month button in the graph window
+   
 
 def homePage():#Information page
     deleteChildren()
@@ -330,13 +328,6 @@ def MonthRate(index): #Resamples the data based on the last 30 days
     new_Month=toPlot.resample('D').sum() #Resample the data based on days and sum the data for the last 30 days
     graphIt(32, new_Month, index,rateType,2) #Send everything to the graphIt function
 
-def ViewData(index): #This allows the user to view the full list of data from the csv
-    FullData = pd.read_csv(ard.folder+"\\"+allFiles[0][index], index_col=0) #Fetch the csv file for the selected counter
-    FullData.index= pd.to_datetime(FullData.index,errors='coerce', format='%Y-%m-%d %H:%M:%S') #set the first column to datetime
-    if(len(FullData)!=0):
-        show(FullData) #This will show the data and allow to view statistics and a histogram
-    else: #in case the dataset is empty popul error message
-        messagebox.showinfo("Empty CSV file", "There is no data availabe at the moment for Counter #"+str(index+1)) #error message
 
 def graphIt(days, data, index,rateType,gtype): #This function graphs the data based on selected counter
     #This arrays formats the x axis, according to time or dates
@@ -357,10 +348,7 @@ def graphIt(days, data, index,rateType,gtype): #This function graphs the data ba
     command=lambda :MonthRate(index), font=("Calibri", int(12*zl))) #Button to access last 30 days graph
     GUI_MonthButton.place(x=int(w*0.64), y=int(h*0.386) , relwidth= 0.16, relheight=0.10) #Size and position of button
 
-    DataButton= tk.Button(GUI_GraphicsCanvas, text= "View data" , bg= 'white',
-    command=lambda :ViewData(index), font=("Calibri", int(12*zl)))  #Button to view overall data
-    DataButton.place(x=int(w*0.64), y=int(h*0.476) , relwidth= 0.16, relheight=0.10)  #place the month button in the graph window
-
+   
     today=datetime.datetime.now().strftime("%Y-%m-%d")
 
     locator = mdates.AutoDateLocator()
