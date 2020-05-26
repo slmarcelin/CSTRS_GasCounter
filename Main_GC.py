@@ -103,6 +103,12 @@ import numpy as np
 import serial.tools.list_ports
 register_matplotlib_converters()  #register matpotlib converters
 from PyQt5.QtWidgets import QApplication, QWidget
+import serial.tools.list_ports
+
+comlist = serial.tools.list_ports.comports()
+connectedPorts = []
+for element in comlist:
+    connectedPorts.append(element.device)
 
 WAIT_Hour = 3600  #60 mins of seconds
 WAIT_Day=86400  #24 hours of seconds
@@ -114,7 +120,7 @@ mythread=""
 global stop_threads
 global allFiles
 global selected
-connectS = "N-CXN"
+connectS = "NO-CXN"
 
 ##########################################FUNCTIONS##############################################################################
 #### Arduino Serial port
@@ -126,21 +132,6 @@ allFiles = np.asarray(ard.Files)
 # for windows
 
 global com
-com_arr.append('COM13')
-com_arr.append('COM3')
-com_arr.append('COM4')
-com_arr.append('COM7')
-com_arr.append('COM11')
-com_arr.append('COM12')
-com_arr.append('COM14')
-com_arr.append('COM15')
-
-# for Raspberry PI
-com_arr.append('/dev/ttyACM1')
-com_arr.append('/dev/ttyACM2')
-com_arr.append('/dev/ttyACM3')
-com_arr.append('/dev/ttyUSB0')
-com_arr.append('/dev/ttyUSB1')
 
 
 #Thread class is called to create the thread and assign tasks to each one 
@@ -174,7 +165,7 @@ class MyThread(threading.Thread): #Each of the
             else:
                 print("Port selected:" +com) #remind user of the com port name selected
                 A = ard.ArdConnect(com) #retry another connection with arduino
-                connectS="N-CXN" #update lable to no connection
+                connectS="NO-CXN" #update lable to no connection
                 if ard.run: #if succeeded
                     ard.ArdSetup(A) #Setup arduino
                     connectS="CXN" #update label to connection
@@ -514,15 +505,15 @@ GUI_SerialPortLabel = tk.Label(GUI_LeftPanelLeftBar,text='PORT',bg="firebrick",f
 GUI_SerialPortLabel.place(x=int(w*0.004),y=int(h*0.92), width=int(w*0.05),height=int(h*0.046))
 #
 GUI_SerialPortValue=ttk.Combobox(GUI_LeftPanelLeftBar, state = "readonly") #COMBO-BOX menu
-GUI_SerialPortValue[ "values" ] =com_arr #Set the values of the menu
-GUI_SerialPortValue.config(width=8, height=int(h*0.040), background="red",font=int(10*zl),justify="center") #configurate
+GUI_SerialPortValue[ "values" ] =connectedPorts #Set the values of the menu
+GUI_SerialPortValue.config(width=7, height=int(h*0.040), background="red",font=int(10*zl),justify="center") #configurate
 GUI_SerialPortValue.place(x=int(w*0.055),y=int(h*0.92))
 GUI_SerialPortValue.bind( "<<ComboboxSelected>>" ,_SerialPortChange ) #on select, call function
 
 
 # #ARDUINO STATUSd
-GUI_StatusInfo=tk.Label(GUI_LeftPanelLeftBar,bg= 'firebrick',anchor='e',text=connectS,fg="white",font=("times", int(11*zl), "bold"))
-GUI_StatusInfo.place(x=int(w*0.14),y=int(h*0.92), width=int(w*0.05),height=int(h*0.046))
+GUI_StatusInfo=tk.Label(GUI_LeftPanelLeftBar,bg= 'firebrick',anchor='e',text=connectS,fg="white",font=("times", int(10*zl), "bold"))
+GUI_StatusInfo.place(x=int(w*0.13),y=int(h*0.92), width=int(w*0.06),height=int(h*0.046))
 ##################################################################################
 path = "image.png" #dummy image for intro
 img = ImageTk.PhotoImage(Image.open(path)) #fetch image
