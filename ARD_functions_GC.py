@@ -38,7 +38,7 @@ for i in range(30):
 def ArdConnect(com):
     global run
     try:
-        print('\nAttempting to connect to the given port') #Print message to user
+        print('\nAttempting to connect to the given port -> '+com) #Print message to user
         print('Connecting...')
         connection = SerialManager(device=com)  #Connected to the provided serial com name
         ard = ArduinoApi(connection=connection) #Connect to the arduino

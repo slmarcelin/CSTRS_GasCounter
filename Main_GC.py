@@ -98,8 +98,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg  #Place figures 
 from pandas.plotting import register_matplotlib_converters  #Register matpotlib to pandas
 import matplotlib.dates as mdates  #For date formatting purposes
 from matplotlib.dates import AutoDateFormatter, AutoDateLocator
-
+from tkinter import messagebox
 import numpy as np
+import serial.tools.list_ports
 register_matplotlib_converters()  #register matpotlib converters
 from PyQt5.QtWidgets import QApplication, QWidget
 
@@ -119,10 +120,11 @@ connectS = "N-CXN"
 # Port in which Arduino is connected
 com_arr = []*30 #array of ports
 stop_threads = False
-
+global A #global Arduino object
 allFiles = np.asarray(ard.Files)
 # for windows
-com = 'COM3'
+
+global com
 com_arr.append('COM13')
 com_arr.append('COM3')
 com_arr.append('COM4')
@@ -131,12 +133,14 @@ com_arr.append('COM11')
 com_arr.append('COM12')
 com_arr.append('COM14')
 com_arr.append('COM15')
+
 # for Raspberry PI
 com_arr.append('/dev/ttyACM1')
 com_arr.append('/dev/ttyACM2')
 com_arr.append('/dev/ttyACM3')
 com_arr.append('/dev/ttyUSB0')
 com_arr.append('/dev/ttyUSB1')
+
 
 #Thread class is called to create the thread and assign tasks to each one 
 class MyThread(threading.Thread): #Each of the 
@@ -163,6 +167,7 @@ class MyThread(threading.Thread): #Each of the
                     time.sleep(2.5) #debouncing to make sure that the pin output is not repeating
                     ard.ticks[index]=1 #set the pin output back to high
                 if stop_threads: 
+                    mythread.join()
                     break
                 time.sleep(0.02) #sleep a bit before starting reading process of same thread pin                        
             else:
@@ -175,7 +180,6 @@ class MyThread(threading.Thread): #Each of the
 
 #main() function initialized all the threads through the thread class and passes the pin id
 def main(): 
-    global mythread #global thread object
     for x in range(30): #30 thread for 30 pins
         pinID=x+22; #Create the initial thread id associated with the pinId                                            
         mythread = MyThread(name = format(pinID))  #Create the thread
@@ -217,24 +221,9 @@ def oneDay(): #This function is called each time a day passes, volume is reset, 
             fd.close() #close the file
 
 ################################################ Main CODE Brain #####################################################
-global A #global Arduino object
-print("Port selected:" +com) #Tell user the com port selected
-flagRun=False
-
-while(flagRun==False):
-    A = ard.ArdConnect(com) #Connect to the arduino
-    print("Port selected:" +com)
-    time.sleep(1)
-    if(ard.run):
-        flagRun=True
-
-ard.ArdSetup(A) #Setup pins
-print(A) #Print arduino object
-
 
 resetVolume() #start the volume reset timer
 oneDay() #check if 30 days has passes, reset the volume, check size of file
-main() #main() initializes threads for each pins
 
 #deleteChildren function destroys previous canvas to prevent code from crashing
 def deleteChildren():
@@ -244,6 +233,10 @@ def deleteChildren():
 
 #Each time a use selects a different counter
 def selection_changed(event): #Get the selection from the combobox
+    if(ard.run==False):
+        messagebox.showinfo("Connection Error", "Connect the Arduino to the Pi to view most recent updates")
+        return
+
     selected=counterMenu.current() #Get the index of the selected Gas counter
     ### Create default Graph Frame
     deleteChildren()
@@ -278,17 +271,18 @@ def selection_changed(event): #Get the selection from the combobox
 def homePage():#Information page
     deleteChildren()
 
-    GUI_GraphicsCanvas= tk.Canvas(GUI_window, bg='indianred')
+    GUI_GraphicsCanvas= tk.Canvas(GUI_window, bg='firebrick')
     GUI_GraphicsCanvas.place(x= (w//10)+157 ,y=0  ,width= 8*(w//10) , height= 11*(h//10))
     
     #A few lines of information about the project
     text='Welcome to our Gui for Gas Counter!\n There are 30 Gas Counters available in the list.\n'
     text=text+'The flow rate for each counter is displayed as chart and is selectable between m-1, h-1, d-1.\n'
     text=text+'All rates are saved in a csv file.\n'
-    text=text+'You will be able to view the data as well with the view data button.\n\n\n'
+    text=text+'\n\n\n'
+    text=text+'Please make sure that a port is selected!\n'
     text=text+'We hope that you will have a good time analyzing the rates.'
 
-    GUI_GraphHeaderLabel=tk.Label(GUI_GraphicsCanvas, text=text,bg="indianred",
+    GUI_GraphHeaderLabel=tk.Label(GUI_GraphicsCanvas, text=text,bg="firebrick",
         fg="white", justify='center',font=("Calibri", int(14*zl), "bold"), anchor='n') #Label for the header
     GUI_GraphHeaderLabel.place(x=int(w*0.032), y=int(h*0.14)) #Label for the information page
 
@@ -428,10 +422,15 @@ def graphIt(days, data, index,rateType,gtype): #This function graphs the data ba
         canvas = FigureCanvasTkAgg(figure, GUI_GraphicsCanvas) #creat canvas and place figure in canvas
         canvas.get_tk_widget().grid(rowspan=50, sticky="nesw",padx=int(w*0.104),pady=int(h*0.10)) #place canvas in grid
 
-def _SerialPortChange():
-    global com
-    com = GUI_SerialPortValue.get()
-    return True
+def _SerialPortChange(event):
+    com=GUI_SerialPortValue.get()
+    A = ard.ArdConnect(com) #Connect to the arduino
+    if(ard.run):
+        ard.ArdSetup(A) #Setup pins
+        print(A) #Print arduino object
+        main()
+    else:
+        messagebox.showinfo("Port Error", "I cannot connected to the selected port -> "+com)
 
 ## Main window size and zoom(temporary)
 z=1         # ZOOM
@@ -448,7 +447,7 @@ x =(sw/2) -(w/2)
 y =(sh/2) -(h/2)
 
 
-bigfont = font.Font(family="Helvetica",size=12) # Set font of the entire window
+bigfont = font.Font(family="Helvetica",size=10) # Set font of the entire window
 GUI_window.option_add("*TCombobox*Listbox*Font", bigfont) #Add font to the combo-box
 GUI_window.geometry('{}x{}'.format(w ,h,0,0)) #set height and width of GUI window
 
@@ -503,15 +502,22 @@ GUI_GraphicsCanvas= tk.Canvas(GUI_window, bg='white') #create canvas
 GUI_GraphicsCanvas.place(x= int(w*0.202) ,y=0  ,width= 8*(w//10) , height= 11*(h//10)) #style canvas
 
 ############# Status Bar #########################################################
+GUI_PortLabel = tk.Label(GUI_LeftPanelLeftBar,text='Select a serial Port',bg="firebrick",fg="white", font=("times", int(14*zl),"bold"), anchor='n')
+GUI_PortLabel.place(x=int(w*0.020),y=int(h*0.86))
 
 GUI_SerialPortLabel = tk.Label(GUI_LeftPanelLeftBar,text='PORT',bg="firebrick",fg="white", font=("times", int(11*zl), "bold"), anchor='n')
 GUI_SerialPortLabel.place(x=int(w*0.004),y=int(h*0.92), width=int(w*0.05),height=int(h*0.046))
 #
-GUI_SerialPortValue = tk.Spinbox(GUI_LeftPanelLeftBar, values=com_arr, bg= 'white', font= 10, command= _SerialPortChange)
-GUI_SerialPortValue.place(x=int(w*0.055),y=int(h*0.92), relwidth= 1-0.7, height=int(h*0.040))
+GUI_SerialPortValue=ttk.Combobox(GUI_LeftPanelLeftBar, state = "readonly") #COMBO-BOX menu
+GUI_SerialPortValue[ "values" ] =com_arr #Set the values of the menu
+GUI_SerialPortValue.config(width=8, height=int(h*0.040), background="red",font=int(10*zl),justify="center") #configurate
+GUI_SerialPortValue.place(x=int(w*0.055),y=int(h*0.92))
+GUI_SerialPortValue.bind( "<<ComboboxSelected>>" ,_SerialPortChange ) #on select, call function
+
+
 # #ARDUINO STATUSd
 GUI_StatusInfo=tk.Label(GUI_LeftPanelLeftBar,bg= 'firebrick',anchor='e',text=connectS,fg="white",font=("times", int(11*zl), "bold"))
-GUI_StatusInfo.place(x=int(w*0.12),y=int(h*0.92), width=int(w*0.05),height=int(h*0.046))
+GUI_StatusInfo.place(x=int(w*0.14),y=int(h*0.92), width=int(w*0.05),height=int(h*0.046))
 ##################################################################################
 path = "image.png" #dummy image for intro
 img = ImageTk.PhotoImage(Image.open(path)) #fetch image
@@ -520,9 +526,9 @@ panel.pack(side = "bottom", fill = "both", expand = "yes") #pack overall
 
 #The program will not work without this loops
 GUI_window.mainloop() #keep the program in a continuous loop
+
 threading2.cancel()
 threading3.cancel()
 stop_threads = True
-mythread.join()
 sys.exit()                  
                                             
